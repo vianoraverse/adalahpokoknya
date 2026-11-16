@@ -37,14 +37,7 @@ sebagai admin dengan `admin@yourway.local` dan kata sandi yang tadi diisi.
 - Tambahkan anggota tim di GitHub: repo > **Settings > Collaborators > Add people**.
 - **Isi yang bisa diubah tanpa menyentuh kode** (masuk sebagai admin di website): butir kuesioner, bobot
   indikator, ambang, teks rekomendasi R1–R4, profil kebutuhan soft skill per karier, dan akun.
-- **Isi yang ada di kode**:
-  | Mau mengubah | Berkas |
-  | --- | --- |
-  | Teks halaman depan | `client/src/pages/Landing.tsx` |
-  | Warna, huruf, tata letak | `client/src/styles.css` (token warna ada di bagian `:root`) |
-  | Halaman hasil dan diagram | `client/src/pages/Hasil.tsx`, `client/src/components/charts.tsx` |
-  | Kuesioner | `client/src/pages/Asesmen.tsx` |
-  | Rumus skor dan aturan | `server/src/bms/engine.ts` (jalankan `npm test` setelah mengubah) |
-  | Data awal (karier, butir, profil) | `server/src/seed/data.ts` (hanya dipakai saat basis data masih kosong) |
+- **Isi yang ada di kode**: daftar berkas untuk tiap jenis perubahan ada di `README.md` bagian
+  "Mau mengubah apa, buka berkas mana". Semuanya HTML, CSS, dan JavaScript biasa.
 - Alur kerja: `git pull`, ubah, coba dengan `npm run dev`, lalu `git commit` dan `git push`. Render
-  membangun ulang dalam beberapa menit. Bila build gagal, versi lama tetap tayang; lihat log di Render.
+  menayangkan versi baru dalam beberapa menit. Bila gagal, versi lama tetap tayang; lihat log di Render.

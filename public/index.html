@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YourWay: ukur niat karier TIK kamu</title>
+    <meta name="description" content="YourWay mengukur niat karier dan soft skill mahasiswa Teknik Informatika, lalu mencocokkannya dengan 16 karier TIK." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="depan">
+    <header class="depan__atas gelap">
+      <nav class="depan__nav" aria-label="Navigasi situs">
+        <a class="logo" href="/"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+            <path d="M8 6l8 10v10M24 6l-8 10" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="24" cy="6" r="4.5" fill="#ffce2e" stroke="#14163f" stroke-width="2" />
+          </svg> YourWay</a>
+        <div id="nav-akun">
+          <a href="/masuk">Masuk</a>
+          <a class="tombol tombol--terang" href="/daftar">Daftar</a>
+        </div>
+      </nav>
+
+      <div class="depan__judul">
+        <h1>Setelah lulus,<br />mau ke mana?</h1>
+        <p>
+          YourWay mengukur <strong>seberapa kuat niatmu</strong> pada satu karier TIK dan <strong>seberapa cocok soft skill-mu</strong>
+          dengan kebutuhan karier itu. Hasilnya angka yang bisa kamu telusuri, bukan tebakan.
+        </p>
+      </div>
+
+      <section class="papan" aria-labelledby="judul-papan">
+        <p class="papan__judul"><span id="judul-papan">Pilih tujuanmu untuk mulai</span><span>16 karier TIK</span></p>
+        <ol class="papan__daftar" id="papan-karier"></ol>
+      </section>
+      <p class="depan__catatan">Jenjang awal (KKNI 5–6), diadaptasi dari Peta Okupasi Nasional bidang TIK, Kominfo (2017).</p>
+    </header>
+
+    <main>
+      <section class="bagian bagian--putih" aria-labelledby="cara-kerja">
+        <h2 class="bagian__judul" id="cara-kerja">Empat perhentian, sekitar sepuluh menit</h2>
+        <ol class="rute">
+          <li>
+            <h3>Pilih satu karier</h3>
+            <p>Tentukan karier TIK yang paling ingin kamu tempuh dari 16 pilihan.</p>
+          </li>
+          <li>
+            <h3>Jawab 36 pernyataan</h3>
+            <p>Skala 1 sampai 5: delapan tentang niat karier, 28 tentang soft skill.</p>
+          </li>
+          <li>
+            <h3>Lihat skor dan kesesuaian</h3>
+            <p>Skor niat, skor soft skill, dan Soft Skill Fit Score terhadap karier pilihanmu serta 15 karier lainnya.</p>
+          </li>
+          <li>
+            <h3>Kembangkan yang paling berpengaruh</h3>
+            <p>Tiga soft skill prioritas beserta langkah pengembangannya.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="bagian" aria-labelledby="yang-diukur">
+        <h2 class="bagian__judul" id="yang-diukur">Tiga jalur yang diukur</h2>
+        <p class="bagian__pengantar">
+          Niat karier menjadi pusat model, mengadaptasi konstruk <i>behavioral intention</i> pada TAM/UTAUT. Soft skill mengikuti MSIS
+          2016 dan ASEC (2016). Hard skill sengaja tidak diukur agar hasilnya tidak tumpang tindih dengan tes kesiapan kerja.
+        </p>
+        <div class="jalur-daftar">
+          <article class="jalur jalur--y">
+            <div class="jalur__info">
+              <h3 class="jalur__nama"><span class="kode">Y</span> Niat karier</h3>
+              <p>Seberapa kuat kecenderungan dan komitmenmu menempuh karier yang kamu pilih.</p>
+            </div>
+            <ol class="jalur__stasiun" aria-label="Indikator Niat karier">
+              <li>Minat</li>
+              <li>Rencana</li>
+              <li>Usaha persiapan</li>
+              <li>Kemantapan pilihan</li>
+            </ol>
+          </article>
+          <article class="jalur jalur--x1">
+            <div class="jalur__info">
+              <h3 class="jalur__nama"><span class="kode">X1</span> Soft skill intrapersonal</h3>
+              <p>Cara kamu mengelola pikiran, sikap, dan perilakumu sendiri.</p>
+            </div>
+            <ol class="jalur__stasiun" aria-label="Indikator Soft skill intrapersonal">
+              <li>Critical Thinking</li>
+              <li>Problem Solving</li>
+              <li>Creativity</li>
+              <li>Ethical Analysis</li>
+              <li>Self-development</li>
+              <li>Flexibility</li>
+              <li>Discipline</li>
+            </ol>
+          </article>
+          <article class="jalur jalur--x2">
+            <div class="jalur__info">
+              <h3 class="jalur__nama"><span class="kode">X2</span> Soft skill interpersonal</h3>
+              <p>Cara kamu berinteraksi, berkomunikasi, dan bekerja dengan orang lain.</p>
+            </div>
+            <ol class="jalur__stasiun" aria-label="Indikator Soft skill interpersonal">
+              <li>Collaboration and Teamwork</li>
+              <li>Oral Communication</li>
+              <li>Written Communication</li>
+              <li>Negotiation</li>
+              <li>Leadership</li>
+              <li>Intercultural Competency</li>
+              <li>Conflict Management</li>
+            </ol>
+          </article>
+        </div>
+      </section>
+
+      <section class="bagian bagian--putih" aria-labelledby="cara-hitung">
+        <div class="hitung">
+          <div>
+            <h2 class="bagian__judul" id="cara-hitung">Hitungannya terbuka</h2>
+            <p class="bagian__pengantar">
+              Skor dan rekomendasi ditentukan rumus dan aturan, tanpa machine learning. AI hanya merangkai penjelasan dari hasil yang
+              sudah dihitung, dan tidak menerima identitasmu.
+            </p>
+            <dl class="rumus">
+              <div><dt>Normalisasi jawaban</dt><dd>x′ = (x − 1) / 4 × 100</dd></div>
+              <div><dt>Selisih per indikator</dt><dd>Gap = max(Kebutuhan − Skor, 0)</dd></div>
+              <div><dt>Soft Skill Fit Score</dt><dd>SFS = 100 − Σ (bobot × Gap)</dd></div>
+            </dl>
+          </div>
+          <div class="matriks" role="group" aria-label="Aturan rekomendasi berdasarkan niat karier dan Soft Skill Fit Score">
+            <span></span>
+            <span class="matriks__sumbu">Niat (Y) di bawah 75</span>
+            <span class="matriks__sumbu">Niat (Y) 75 ke atas</span>
+            <span class="matriks__sumbu matriks__sumbu--tegak">SFS 75 ke atas</span>
+            <div class="matriks__sel">
+              <span class="kode">R3</span>
+              <h3>Potensi selaras, niat belum mantap</h3>
+              <p>Eksplorasi karier dan informasi karier.</p>
+            </div>
+            <div class="matriks__sel matriks__sel--r1">
+              <span class="kode kode--sun">R1</span>
+              <h3>Niat mantap dan selaras</h3>
+              <p>Pengayaan dan tantangan lanjutan.</p>
+            </div>
+            <span class="matriks__sumbu matriks__sumbu--tegak">SFS di bawah 75</span>
+            <div class="matriks__sel">
+              <span class="kode">R4</span>
+              <h3>Perlu eksplorasi dan penguatan dasar</h3>
+              <p>Karier alternatif dan pengembangan dasar.</p>
+            </div>
+            <div class="matriks__sel">
+              <span class="kode">R2</span>
+              <h3>Niat kuat, soft skill perlu dikembangkan</h3>
+              <p>Prioritas tiga indikator dengan selisih terbesar.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bagian" aria-labelledby="privasi">
+        <div class="privasi">
+          <div>
+            <h2 class="bagian__judul" id="privasi">Datamu tetap milikmu</h2>
+            <p class="bagian__pengantar">Mengikuti prinsip Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi.</p>
+          </div>
+          <ul>
+            <li>Kami meminta persetujuanmu sebelum data dikumpulkan.</li>
+            <li>Data yang diminta hanya nama, email, dan jawaban kuesioner.</li>
+            <li>Kata sandi disimpan dalam bentuk hash Bcrypt, bukan teks biasa.</li>
+            <li>Hasil asesmen hanya bisa dibuka pemilik akun. Admin hanya melihat data gabungan tanpa nama.</li>
+            <li>Kamu bisa menghapus akun beserta seluruh datanya kapan saja.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="ajakan">
+        <div>
+          <h2 class="bagian__judul">Mulai dari satu tujuan</h2>
+          <p>Kamu bisa mengulang asesmen kapan saja untuk melihat perkembanganmu.</p>
+        </div>
+        <a class="tombol tombol--utama tombol--besar" href="/daftar" id="tombol-mulai">Mulai asesmen</a>
+      </section>
+    </main>
+
+    <footer class="kaki gelap">
+      <a class="logo" href="/"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+            <path d="M8 6l8 10v10M24 6l-8 10" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="24" cy="6" r="4.5" fill="#ffce2e" stroke="#14163f" stroke-width="2" />
+          </svg> YourWay</a>
+      <p>
+        Proyek Rekayasa Perangkat Lunak, Kelompok 4: Alexa Serrafona Juliet, Fina Hidayati, Giska Sisilia Putri, Salwa Syaharani
+        Putri, dan Vida Maulida Nurul Ihsan.
+      </p>
+      <p>Program Studi Teknik Informatika, Fakultas Sains dan Teknologi, UIN Syarif Hidayatullah Jakarta, 2026.</p>
+    </footer>
+
+    <script type="module" src="/js/halaman/depan.js"></script>
+  </body>
+</html>

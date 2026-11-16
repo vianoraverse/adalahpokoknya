@@ -1,17 +1,22 @@
 {
   "name": "yourway",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "YourWay: Sistem Pemodelan Niat Karier Mahasiswa Teknik Informatika Berbasis Soft Skill",
-  "workspaces": ["server", "client"],
+  "type": "module",
   "scripts": {
-    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
-    "build": "npm run build -w client && npm run build -w server",
-    "start": "npm run start -w server",
-    "test": "npm test -w server"
+    "dev": "node --watch server/index.js",
+    "start": "node server/index.js",
+    "test": "node --test server/bms/engine.test.js"
   },
-  "devDependencies": {
-    "concurrently": "^9.1.0"
+  "dependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1",
+    "zod": "^3.24.1"
   },
   "engines": { "node": ">=20.12" }
 }

@@ -1,4 +1,4 @@
-# Blueprint Render: satu web service yang menyajikan API dan frontend.
+# Blueprint Render: satu web service Node.js yang menyajikan API dan frontend.
 # Basis data memakai PostgreSQL eksternal (mis. Neon) lewat DATABASE_URL,
 # karena PostgreSQL gratis milik Render kedaluwarsa setelah 30 hari.
 services:
@@ -6,7 +6,7 @@ services:
     name: yourway
     runtime: node
     plan: free
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
