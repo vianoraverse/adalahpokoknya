@@ -35,6 +35,9 @@ JWT_SECRET=<nilai-acak-panjang> NODE_ENV=production npm start   # http://localho
 
 Atau dengan Docker dan PostgreSQL: `docker compose up --build`.
 
+Untuk menayangkan website secara publik (Render + Neon, gratis) dan panduan mengubah isi web bersama tim,
+lihat [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 ### Penjelasan AI (opsional)
 
 Isi `AI_PROVIDER` (`groq`, `gemini`, atau `qwen`) dan `AI_API_KEY` pada `.env`. Tanpa kunci, atau bila layanan
