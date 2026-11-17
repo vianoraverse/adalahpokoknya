@@ -2,18 +2,19 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { susunPenjelasan } from '../ai.js';
 import { wajibLogin } from '../auth.js';
-import { hitung } from '../bms/engine.js';
 import { getDb } from '../db.js';
-import { HttpError, h } from '../http.js';
-import { muatModel } from '../model.js';
+import { HttpError, bahasa, h } from '../http.js';
+import { simpanAsesmen } from '../simpan-asesmen.js';
 export const asesmenRouter = Router();
 // Daftar 16 karier (publik, dipakai juga di halaman depan).
 asesmenRouter.get(
   '/careers',
-  h(async (_req, res) => {
+  h(async (req, res) => {
     const db = await getDb();
+    // Untuk tampilan bahasa Inggris, deskripsi diambil dari kolom deskripsi_en (kalau sudah diisi).
+    const deskripsi = bahasa(req) === 'en' ? 'COALESCE(deskripsi_en, deskripsi)' : 'deskripsi';
     const { rows } = await db.query(
-      'SELECT id, kode, nama, area_fungsi, padanan, status_padanan, deskripsi FROM karier ORDER BY urutan',
+      `SELECT id, kode, nama, area_fungsi, padanan, status_padanan, ${deskripsi} AS deskripsi FROM karier ORDER BY urutan`,
     );
     res.json({ karier: rows });
   }),
@@ -36,9 +37,10 @@ asesmenRouter.get(
 asesmenRouter.get(
   '/instrument',
   wajibLogin(),
-  h(async (_req, res) => {
+  h(async (req, res) => {
     const db = await getDb();
-    const { rows } = await db.query(`SELECT b.id, b.teks, i.kode AS indikator_kode, i.nama AS indikator, i.variabel
+    const teks = bahasa(req) === 'en' ? 'COALESCE(b.teks_en, b.teks)' : 'b.teks';
+    const { rows } = await db.query(`SELECT b.id, ${teks} AS teks, i.kode AS indikator_kode, i.nama AS indikator, i.variabel
      FROM butir b JOIN indikator i ON i.id = b.indikator_id
      WHERE b.aktif = TRUE ORDER BY i.urutan, b.urutan, b.id`);
     res.json({ butir: rows });
@@ -47,7 +49,7 @@ asesmenRouter.get(
 async function ambilAsesmen(q, id, penggunaId) {
   const { rows } = await q.query(
     `SELECT a.id, a.jenis, a.dibuat_pada, k.id AS karier_id, k.nama AS karier_nama, k.area_fungsi,
-            h.detail, pj.narasi, pj.sumber, pj.model
+            h.detail, pj.narasi, pj.sumber, pj.model, pj.bahasa
      FROM asesmen a
      JOIN karier k ON k.id = a.karier_id
      JOIN hasil_skor h ON h.asesmen_id = a.id
@@ -64,7 +66,7 @@ async function ambilAsesmen(q, id, penggunaId) {
     dibuatPada: r.dibuat_pada,
     karier: { id: r.karier_id, nama: r.karier_nama, areaFungsi: r.area_fungsi },
     hasil: r.detail,
-    penjelasan: r.narasi ? { narasi: r.narasi, sumber: r.sumber, model: r.model } : null,
+    penjelasan: r.narasi ? { narasi: r.narasi, sumber: r.sumber, model: r.model, bahasa: r.bahasa } : null,
   };
 }
 // Kirim jawaban → hitung skor (UC-11) → simpan hasil (FR-04 s.d. FR-06).
@@ -79,55 +81,8 @@ asesmenRouter.post(
       })
       .parse(req.body);
     const db = await getDb();
-    const model = await muatModel(db);
-    const jawaban = {};
-    for (const b of model.butir) {
-      const n = d.jawaban[String(b.id)];
-      if (n === undefined) throw new HttpError(400, 'Masih ada butir yang belum dijawab.');
-      jawaban[b.id] = n;
-    }
-    let hasil;
-    try {
-      hasil = hitung({ ...model, jawaban, karierPilihanId: d.karierId });
-    } catch (e) {
-      throw new HttpError(400, e.message);
-    }
-    const rekomendasi = {
-      utama: model.aturan[hasil.aturan],
-      tambahan: hasil.aturanTambahan.map((k) => model.aturan[k]).filter(Boolean),
-    };
     const penggunaId = req.pengguna.id;
-    const id = await db.tx(async (q) => {
-      const lama = await q.query('SELECT 1 FROM asesmen WHERE pengguna_id = $1 LIMIT 1', [penggunaId]);
-      const a = await q.query('INSERT INTO asesmen (pengguna_id, karier_id, jenis) VALUES ($1,$2,$3) RETURNING id', [
-        penggunaId,
-        d.karierId,
-        lama.rows.length ? 'ulang' : 'awal',
-      ]);
-      const asesmenId = a.rows[0].id;
-      const ids = Object.keys(jawaban).map(Number);
-      await q.query(
-        `INSERT INTO jawaban (asesmen_id, butir_id, nilai)
-       SELECT $1, x.butir_id, x.nilai FROM unnest($2::int[], $3::int[]) AS x(butir_id, nilai)`,
-        [asesmenId, ids, ids.map((i) => jawaban[i])],
-      );
-      await q.query(
-        `INSERT INTO hasil_skor (asesmen_id, skor_y, skor_x1, skor_x2, sfs_pilihan, aturan_kode, status_kesesuaian, karier_teratas_id, detail)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)`,
-        [
-          asesmenId,
-          hasil.skor.Y,
-          hasil.skor.X1,
-          hasil.skor.X2,
-          hasil.sfsPilihan,
-          hasil.aturan,
-          hasil.status,
-          hasil.karierTeratas.karierId,
-          JSON.stringify({ ...hasil, rekomendasi }),
-        ],
-      );
-      return asesmenId;
-    });
+    const id = await simpanAsesmen(db, penggunaId, d.karierId, d.jawaban);
     res.status(201).json({ asesmen: await ambilAsesmen(db, id, penggunaId) });
   }),
 );
@@ -137,10 +92,11 @@ asesmenRouter.get(
   h(async (req, res) => {
     const db = await getDb();
     const { rows } = await db.query(
-      `SELECT a.id, a.jenis, a.dibuat_pada AS "dibuatPada", k.nama AS karier,
+      `SELECT a.id, a.jenis, a.dibuat_pada AS "dibuatPada", k.nama AS karier, kh.nama AS "karierHasil", kh.kode AS "kodeHasil",
             h.skor_y AS y, h.skor_x1 AS x1, h.skor_x2 AS x2, h.sfs_pilihan AS sfs,
             h.aturan_kode AS aturan, h.status_kesesuaian AS status
      FROM asesmen a JOIN karier k ON k.id = a.karier_id JOIN hasil_skor h ON h.asesmen_id = a.id
+     JOIN karier kh ON kh.id = h.karier_teratas_id
      WHERE a.pengguna_id = $1 ORDER BY a.dibuat_pada DESC, a.id DESC`,
       [req.pengguna.id],
     );
@@ -162,32 +118,32 @@ asesmenRouter.post(
   h(async (req, res) => {
     const db = await getDb();
     const a = await ambilAsesmen(db, Number(req.params.id), req.pengguna.id);
-    if (a.penjelasan && !req.body?.ulang) {
+    // Penjelasan dari AI disimpan supaya tidak diminta ulang. Penjelasan templat selalu disusun ulang
+    // (murah), jadi perubahan teks templat langsung terlihat.
+    const bhs = bahasa(req);
+    if (a.penjelasan?.sumber === 'ai' && a.penjelasan.bahasa === bhs && !req.body?.ulang) {
       res.json({ penjelasan: a.penjelasan });
       return;
     }
     const hs = a.hasil;
-    const softSkill = hs.skorIndikator.filter((s) => s.variabel !== 'Y');
-    // Tanpa identitas: hanya nama karier, skor, dan aturan.
+    const karierHasil = hs.karierTeratas.nama;
+    // Hasil lama (sebelum ada prioritasHasil) hanya punya prioritas untuk karier pilihan. Kalau karier hasilnya
+    // berbeda, datanya tidak ada (null) dan penjelasan meminta mahasiswa mengulang tes.
+    const kembangkan = hs.prioritasHasil ?? (hs.karierTeratas.karierId === a.karier.id ? hs.prioritas : null);
+    // Tanpa identitas mahasiswa: hanya nama karier dan nama soft skill.
     const data = {
+      karierHasil,
       karierPilihan: a.karier.nama,
-      skor: { Y: hs.skor.Y, X1: hs.skor.X1, X2: hs.skor.X2, SFS: hs.sfsPilihan },
-      kategori: hs.kategori,
-      status: hs.status,
-      karierTeratas: { nama: hs.karierTeratas.nama, sfs: hs.karierTeratas.sfs },
-      aturan: hs.rekomendasi.utama,
-      tambahan: hs.rekomendasi.tambahan,
-      prioritas: hs.prioritas.map((p) => ({ nama: p.nama, skor: p.skor, req: p.req, gap: p.gap, saran: p.saran })),
-      kekuatan: [...softSkill]
-        .sort((x, y) => y.skor - x.skor)
-        .slice(0, 3)
-        .map((s) => ({ nama: s.nama, skor: s.skor })),
+      samaDenganPilihan: hs.karierTeratas.karierId === a.karier.id,
+      kembangkan: kembangkan?.map((p) => ({ nama: p.nama, saran: bhs === 'en' && p.saranEn ? p.saranEn : p.saran })) ?? null,
+      bahasa: bhs,
     };
     const p = await susunPenjelasan(data);
     await db.query(
-      `INSERT INTO penjelasan_ai (asesmen_id, narasi, sumber, model) VALUES ($1,$2,$3,$4)
-     ON CONFLICT (asesmen_id) DO UPDATE SET narasi = EXCLUDED.narasi, sumber = EXCLUDED.sumber, model = EXCLUDED.model, dibuat_pada = now()`,
-      [a.id, p.narasi, p.sumber, p.model],
+      `INSERT INTO penjelasan_ai (asesmen_id, narasi, sumber, model, bahasa) VALUES ($1,$2,$3,$4,$5)
+     ON CONFLICT (asesmen_id) DO UPDATE SET narasi = EXCLUDED.narasi, sumber = EXCLUDED.sumber, model = EXCLUDED.model,
+       bahasa = EXCLUDED.bahasa, dibuat_pada = now()`,
+      [a.id, p.narasi, p.sumber, p.model, bhs],
     );
     res.json({ penjelasan: p });
   }),

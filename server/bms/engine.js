@@ -71,6 +71,7 @@ export function hitungGap(skor, indikator, profil, karierId) {
       gap: g,
       tertimbang: w * g,
       saran: ind.saran ?? '',
+      saranEn: ind.saranEn ?? '',
     });
   }
   const sfs = rapikan(100 - gap.reduce((a, g) => a + g.tertimbang, 0));
@@ -113,10 +114,28 @@ export function hitung(m) {
   if (skor.X2 < m.ambang.ambang_rendah) aturanTambahan.push('X2_RENDAH');
   if (karierTeratas.sfs - sfsPilihan >= m.ambang.selisih_alternatif - EPS) aturanTambahan.push('ALTERNATIF');
   // Prioritas pengembangan: hasil kali bobot × selisih terbesar.
-  const prioritas = gapPilihan
-    .filter((g) => g.gap > 0)
-    .sort((a, b) => b.tertimbang - a.tertimbang || b.gap - a.gap)
-    .slice(0, Math.max(0, Math.round(m.ambang.jumlah_prioritas)));
+  const jumlahPrioritas = Math.max(0, Math.round(m.ambang.jumlah_prioritas));
+  const urutkanPrioritas = (gap) =>
+    gap
+      .filter((g) => g.gap > 0)
+      .sort((a, b) => b.tertimbang - a.tertimbang || b.gap - a.gap)
+      .slice(0, jumlahPrioritas);
+  const prioritas = urutkanPrioritas(gapPilihan);
+
+  // Yang ditampilkan ke mahasiswa: karier paling cocok sebagai hasil akhir,
+  // soft skill yang perlu dikembangkan untuk karier itu, 3 soft skill terkuat,
+  // dan 3 karier alternatif berikutnya.
+  const gapTeratas =
+    karierTeratas.karierId === pilihan.id ? gapPilihan : hitungGap(skorIndikator, m.indikator, m.profil, karierTeratas.karierId).gap;
+  const prioritasHasil = urutkanPrioritas(gapTeratas);
+  const kekuatan = skorIndikator
+    .filter((s) => s.variabel !== 'Y')
+    .sort((a, b) => b.skor - a.skor)
+    .slice(0, 3);
+  const alternatif = sfsSemua
+    .filter((s) => s.karierId !== karierTeratas.karierId)
+    .sort((a, b) => b.sfs - a.sfs)
+    .slice(0, 3);
   return {
     skorIndikator,
     skor,
@@ -134,6 +153,10 @@ export function hitung(m) {
     aturan,
     aturanTambahan,
     prioritas,
+    prioritasHasil,
+    gapHasil: gapTeratas,
+    kekuatan,
+    alternatif,
     ambang: m.ambang,
   };
 }

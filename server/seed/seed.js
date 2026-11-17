@@ -1,6 +1,17 @@
 import bcrypt from 'bcryptjs';
 import { config } from '../config.js';
-import { ATURAN, BUTIR, FREKUENSI, INDIKATOR, KARIER, PENGATURAN, levelKebutuhan } from './data.js';
+import {
+  ATURAN,
+  BUTIR,
+  BUTIR_EN,
+  DESKRIPSI_KARIER_EN,
+  FREKUENSI,
+  INDIKATOR,
+  KARIER,
+  PENGATURAN,
+  SARAN_EN,
+  levelKebutuhan,
+} from './data.js';
 /** Mengisi data awal bila tabel masih kosong. Aman dijalankan berulang. */
 export async function seed(db) {
   const { rows } = await db.query('SELECT COUNT(*)::int AS n FROM karier');
@@ -47,6 +58,7 @@ export async function seed(db) {
     });
     console.log('[seed] Data awal dimuat: 16 karier, 18 indikator, 36 butir, profil karier, aturan.');
   }
+  await isiTerjemahan(db);
   const admin = await db.query('SELECT 1 FROM pengguna WHERE peran = $1 LIMIT 1', ['admin']);
   if (admin.rows.length === 0) {
     const hash = await bcrypt.hash(config.adminPassword, 10);
@@ -57,5 +69,22 @@ export async function seed(db) {
       'admin',
     ]);
     console.log(`[seed] Akun Operator Admin dibuat: ${config.adminEmail}`);
+  }
+}
+
+/**
+ * Mengisi teks bahasa Inggris yang masih kosong. Dijalankan setiap server menyala, jadi basis data lama
+ * (dibuat sebelum ada fitur bahasa) ikut terisi. Butir dicocokkan lewat teks Indonesianya, jadi butir yang
+ * sudah diubah admin tidak ditimpa dan tetap tampil dalam bahasa Indonesia sampai admin mengisi terjemahannya.
+ */
+async function isiTerjemahan(db) {
+  for (const [kode, teks] of Object.entries(DESKRIPSI_KARIER_EN)) {
+    await db.query('UPDATE karier SET deskripsi_en = $2 WHERE kode = $1 AND deskripsi_en IS NULL', [kode, teks]);
+  }
+  for (const [kode, teks] of Object.entries(SARAN_EN)) {
+    await db.query('UPDATE indikator SET saran_en = $2 WHERE kode = $1 AND saran_en IS NULL', [kode, teks]);
+  }
+  for (const [i, b] of BUTIR.entries()) {
+    await db.query('UPDATE butir SET teks_en = $2 WHERE teks = $1 AND teks_en IS NULL', [b[1], BUTIR_EN[i]]);
   }
 }

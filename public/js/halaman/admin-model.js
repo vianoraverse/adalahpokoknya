@@ -91,7 +91,13 @@ utama.addEventListener('click', (e) => {
     const i = data.indikator.find((x) => x.id === Number(tInd.dataset.indikator));
     const d = modal(`Ubah ${i.nama}`, html`<form class="formulir" novalidate>
       <label>Bobot <input name="bobot" type="number" step="0.1" min="0.1" value="${i.bobot}" /></label>
-      ${i.variabel !== 'Y' ? html`<label>Saran pengembangan <textarea name="saran" rows="3" maxlength="500">${i.saran}</textarea></label>` : ''}
+      ${i.variabel !== 'Y'
+        ? html`<label>Saran pengembangan <textarea name="saran" rows="3" maxlength="500">${i.saran}</textarea></label>
+            <label>Saran pengembangan (English)
+              <textarea name="saranEn" rows="3" maxlength="500">${i.saran_en ?? ''}</textarea>
+              <small>Opsional. Kalau kosong, mahasiswa yang memilih English melihat saran bahasa Indonesia.</small>
+            </label>`
+        : ''}
       <div class="formulir__aksi">
         <button type="button" class="tombol" data-tutup>Batal</button>
         <button class="tombol tombol--utama">Simpan indikator</button>
@@ -100,7 +106,7 @@ utama.addEventListener('click', (e) => {
     $('form', d).addEventListener('submit', (ev) => {
       ev.preventDefault();
       const f = isian(ev.target);
-      simpan(() => api(`/admin/indicators/${i.id}`, { method: 'PUT', body: { bobot: angka(f.bobot), saran: f.saran ?? '' } }), 'Indikator disimpan.', d);
+      simpan(() => api(`/admin/indicators/${i.id}`, { method: 'PUT', body: { bobot: angka(f.bobot), saran: f.saran ?? '', saranEn: f.saranEn ?? '' } }), 'Indikator disimpan.', d);
     });
   }
 

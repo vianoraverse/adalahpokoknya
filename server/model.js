@@ -2,7 +2,7 @@ import { AMBANG_BAWAAN } from './bms/engine.js';
 /** Memuat parameter model (indikator, butir aktif, profil karier, ambang) dari basis data. */
 export async function muatModel(q) {
   const [ind, but, prof, kar, set, atr] = await Promise.all([
-    q.query('SELECT id, kode, nama, variabel, bobot, saran FROM indikator ORDER BY urutan'),
+    q.query('SELECT id, kode, nama, variabel, bobot, saran, saran_en FROM indikator ORDER BY urutan'),
     q.query('SELECT id, indikator_id FROM butir WHERE aktif = TRUE ORDER BY urutan, id'),
     q.query('SELECT karier_id, indikator_id, req, bobot FROM profil_karier'),
     q.query('SELECT id, nama FROM karier ORDER BY urutan'),
@@ -19,6 +19,7 @@ export async function muatModel(q) {
       variabel: r.variabel,
       bobot: Number(r.bobot),
       saran: r.saran,
+      saranEn: r.saran_en ?? '',
     })),
     butir: but.rows.map((r) => ({ id: r.id, indikatorId: r.indikator_id })),
     profil: prof.rows.map((r) => ({

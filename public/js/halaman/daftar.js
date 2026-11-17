@@ -1,5 +1,7 @@
 // Halaman daftar akun mahasiswa.
-import { $, $$, api, berandaPeran, isian, sesi } from '../umum.js';
+import { $, $$, api, berandaPeran, isian, sesi, siapkanHalamanStatis, t } from '../umum.js';
+
+siapkanHalamanStatis();
 
 const lanjut = new URLSearchParams(location.search).get('lanjut');
 for (const a of $$('[data-bawa-lanjut]')) if (lanjut) a.href += `?lanjut=${encodeURIComponent(lanjut)}`;
@@ -15,7 +17,7 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   galat.hidden = true;
   tombol.disabled = true;
-  tombol.textContent = 'Membuat akun…';
+  tombol.textContent = t('daftar.membuat');
   const d = isian(form);
   try {
     await api('/auth/register', { body: { nama: d.nama, email: d.email, password: d.password, setuju: d.setuju === 'on' } });
@@ -24,6 +26,6 @@ form.addEventListener('submit', async (e) => {
     galat.textContent = err.message;
     galat.hidden = false;
     tombol.disabled = false;
-    tombol.textContent = 'Buat akun';
+    tombol.textContent = t('daftar.tombol');
   }
 });

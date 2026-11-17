@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Daftar | YourWay</title>
+    <title data-teks="judul.daftar">Daftar | YourWay</title>
+    <script src="/js/awal.js"></script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,35 +14,35 @@
   <body>
     <div class="masuk">
       <div class="masuk__papan gelap">
-        <a class="logo" href="/"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+        <div class="masuk__atas">
+          <a class="logo" href="/"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
             <path d="M8 6l8 10v10M24 6l-8 10" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
             <circle cx="24" cy="6" r="4.5" fill="#ffce2e" stroke="#14163f" stroke-width="2" />
           </svg> YourWay</a>
+          <div data-tampilan></div>
+        </div>
         <div>
-          <p class="papan-teks">Setelah lulus, mau ke mana?</p>
-          <p>Ukur niat kariermu dan lihat seberapa cocok soft skill-mu dengan karier TIK yang kamu tuju.</p>
+          <p class="papan-teks" data-teks="auth.slogan">Setelah lulus, mau ke mana?</p>
+          <p data-teks="auth.proyek">Project mata kuliah RPL, Kelompok 4.</p>
         </div>
       </div>
       <main class="masuk__isi">
-        <h1>Buat akun</h1>
-        <p class="masuk__sub">Sudah punya akun? <a href="/masuk" data-bawa-lanjut>Masuk</a></p>
+        <h1 data-teks="daftar.judul">Buat akun</h1>
+        <p class="masuk__sub"><span data-teks="daftar.sudah">Sudah punya akun?</span> <a href="/masuk" data-bawa-lanjut data-teks="depan.masuk">Masuk</a></p>
         <form class="formulir" id="form-daftar">
-          <label>Nama <input name="nama" autocomplete="name" required minlength="2" maxlength="80" /></label>
-          <label>Email <input name="email" type="email" autocomplete="email" required /></label>
+          <label><span data-teks="auth.nama">Nama</span> <input name="nama" autocomplete="name" required minlength="2" maxlength="80" /></label>
+          <label><span data-teks="auth.email">Email</span> <input name="email" type="email" autocomplete="email" required /></label>
           <label>
-            Kata sandi
+            <span data-teks="auth.sandi">Kata sandi</span>
             <input name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="72" aria-describedby="petunjuk-sandi" />
-            <small id="petunjuk-sandi">Minimal 8 karakter.</small>
+            <small id="petunjuk-sandi" data-teks="auth.sandiMin">Minimal 8 karakter.</small>
           </label>
           <label class="centang">
             <input name="setuju" type="checkbox" required />
-            <span>
-              Saya setuju YourWay menyimpan nama, email, dan jawaban kuesioner saya untuk menghitung hasil asesmen. Hasil hanya
-              bisa saya lihat sendiri, dan saya bisa menghapus akun kapan saja.
-            </span>
+            <span data-teks="daftar.setuju">Saya setuju nama, email, dan jawaban saya disimpan untuk menghitung hasil tes. Hasilnya hanya bisa saya lihat sendiri, dan akun bisa saya hapus kapan saja.</span>
           </label>
           <p class="galat" role="alert" hidden></p>
-          <button class="tombol tombol--utama">Buat akun</button>
+          <button class="tombol tombol--utama" data-teks="daftar.tombol">Buat akun</button>
         </form>
       </main>
     </div>

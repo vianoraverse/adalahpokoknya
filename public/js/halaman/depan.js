@@ -1,6 +1,8 @@
 // Halaman depan: mengisi papan tujuan dengan 16 karier dan menyesuaikan tombol bila sudah masuk.
-import { $, api, berandaPeran, html, pasang, sesi } from '../umum.js';
+import { $, api, berandaPeran, html, ikon, pasang, sesi, siapkanHalamanStatis, t } from '../umum.js';
+import { IKON_KARIER } from '../ikon.js';
 
+siapkanHalamanStatis();
 const pengguna = await sesi();
 
 // Ke mana pengunjung dibawa saat memilih karier atau menekan "Mulai asesmen".
@@ -12,7 +14,7 @@ function tujuan(kodeKarier) {
 }
 
 if (pengguna) {
-  pasang($('#nav-akun'), html`<a class="tombol tombol--terang" href="${berandaPeran(pengguna.peran)}">Buka dasbor</a>`);
+  pasang($('#nav-akun'), html`<a class="tombol tombol--terang" href="${berandaPeran(pengguna.peran)}">${t('depan.bukaDasbor')}</a>`);
 }
 $('#tombol-mulai').href = tujuan();
 
@@ -21,7 +23,7 @@ try {
   pasang($('#papan-karier'), html`${karier.map((k, i) => html`<li>
     <a class="papan__baris" href="${tujuan(k.kode)}">
       <span class="papan__no">${String(i + 1).padStart(2, '0')}</span>
-      <span class="papan__nama">${k.nama}</span>
+      <span class="papan__nama">${ikon(IKON_KARIER[k.kode])} ${k.nama}</span>
       <span class="papan__area">${k.area_fungsi}</span>
     </a>
   </li>`)}`);

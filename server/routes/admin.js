@@ -14,7 +14,7 @@ adminRouter.get(
   h(async (_req, res) => {
     const db = await getDb();
     const [butir, indikator] = await Promise.all([
-      db.query(`SELECT b.id, b.teks, b.dasar, b.aktif, b.urutan, i.id AS indikator_id, i.nama AS indikator, i.variabel
+      db.query(`SELECT b.id, b.teks, b.teks_en, b.dasar, b.aktif, b.urutan, i.id AS indikator_id, i.nama AS indikator, i.variabel
        FROM butir b JOIN indikator i ON i.id = b.indikator_id ORDER BY i.urutan, b.urutan, b.id`),
       db.query('SELECT id, kode, nama, variabel, bobot, dasar, saran FROM indikator ORDER BY urutan'),
     ]);
@@ -24,6 +24,8 @@ adminRouter.get(
 const skemaButir = z.object({
   indikatorId: z.number({ invalid_type_error: 'Pilih indikator.', required_error: 'Pilih indikator.' }).int(),
   teks: teks('Teks pertanyaan'),
+  // Terjemahan bahasa Inggris (opsional). Kosong = mahasiswa yang memilih English melihat teks Indonesia.
+  teksEn: z.string().trim().max(500).default(''),
   dasar: z.string().trim().max(200).default(''),
   aktif: z.boolean().default(true),
 });
@@ -33,9 +35,9 @@ adminRouter.post(
     const d = skemaButir.parse(req.body);
     const db = await getDb();
     const { rows } = await db.query(
-      `INSERT INTO butir (indikator_id, teks, dasar, aktif, urutan)
-     VALUES ($1,$2,$3,$4,(SELECT COALESCE(MAX(urutan),0)+1 FROM butir)) RETURNING id`,
-      [d.indikatorId, d.teks, d.dasar, d.aktif],
+      `INSERT INTO butir (indikator_id, teks, teks_en, dasar, aktif, urutan)
+     VALUES ($1,$2,$3,$4,$5,(SELECT COALESCE(MAX(urutan),0)+1 FROM butir)) RETURNING id`,
+      [d.indikatorId, d.teks, d.teksEn || null, d.dasar, d.aktif],
     );
     res.status(201).json({ id: rows[0].id });
   }),
@@ -61,13 +63,10 @@ adminRouter.put(
     const id = Number(req.params.id);
     const db = await getDb();
     await pastikanIndikatorPunyaButir(db, id, d.aktif ? d.indikatorId : undefined);
-    await db.query('UPDATE butir SET indikator_id = $1, teks = $2, dasar = $3, aktif = $4 WHERE id = $5', [
-      d.indikatorId,
-      d.teks,
-      d.dasar,
-      d.aktif,
-      id,
-    ]);
+    await db.query(
+      'UPDATE butir SET indikator_id = $1, teks = $2, teks_en = $3, dasar = $4, aktif = $5 WHERE id = $6',
+      [d.indikatorId, d.teks, d.teksEn || null, d.dasar, d.aktif, id],
+    );
     res.json({ ok: true });
   }),
 );
@@ -94,7 +93,7 @@ adminRouter.get(
   h(async (_req, res) => {
     const db = await getDb();
     const [indikator, pengaturan, aturan] = await Promise.all([
-      db.query('SELECT id, kode, nama, variabel, bobot, saran FROM indikator ORDER BY urutan'),
+      db.query('SELECT id, kode, nama, variabel, bobot, saran, saran_en FROM indikator ORDER BY urutan'),
       db.query(`SELECT kunci, nilai, keterangan FROM pengaturan
               ORDER BY array_position(ARRAY['ambang_rendah','ambang_tinggi','ambang_aturan_y','ambang_aturan_sfs','selisih_alternatif','jumlah_prioritas']::text[], kunci)`),
       db.query('SELECT kode, kondisi, interpretasi, jenis, teks FROM aturan_rekomendasi ORDER BY kode'),
@@ -112,12 +111,14 @@ adminRouter.put(
           .positive('Bobot harus lebih dari 0.')
           .max(100),
         saran: z.string().trim().max(500).default(''),
+        saranEn: z.string().trim().max(500).default(''),
       })
       .parse(req.body);
     const db = await getDb();
-    await db.query('UPDATE indikator SET bobot = $1, saran = $2 WHERE id = $3', [
+    await db.query('UPDATE indikator SET bobot = $1, saran = $2, saran_en = $3 WHERE id = $4', [
       d.bobot,
       d.saran,
+      d.saranEn || null,
       Number(req.params.id),
     ]);
     res.json({ ok: true });

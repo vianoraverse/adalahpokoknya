@@ -98,3 +98,9 @@ CREATE TABLE IF NOT EXISTS pengaturan (
   nilai DOUBLE PRECISION NOT NULL,
   keterangan TEXT NOT NULL DEFAULT ''
 );
+
+-- Terjemahan bahasa Inggris untuk teks yang dilihat mahasiswa (kosong = pakai bahasa Indonesia).
+ALTER TABLE karier ADD COLUMN IF NOT EXISTS deskripsi_en TEXT;
+ALTER TABLE butir ADD COLUMN IF NOT EXISTS teks_en TEXT;
+ALTER TABLE indikator ADD COLUMN IF NOT EXISTS saran_en TEXT;
+ALTER TABLE penjelasan_ai ADD COLUMN IF NOT EXISTS bahasa TEXT NOT NULL DEFAULT 'id';

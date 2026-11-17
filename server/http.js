@@ -42,3 +42,6 @@ export function batasiLaju(maks, jendelaMs) {
     next();
   };
 }
+
+/** Bahasa tampilan yang diminta frontend lewat header X-Bahasa ('id' atau 'en'). */
+export const bahasa = (req) => (req.get('X-Bahasa') === 'en' ? 'en' : 'id');

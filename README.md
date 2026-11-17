@@ -24,6 +24,11 @@ npm run dev
 Buka http://localhost:4000. Operator Admin bawaan: `admin@yourway.local` / `admin12345` (ganti lewat `.env`
 sebelum dipakai sungguhan).
 
+- Mau demo ke dosen? Jalankan `npm run demo` (bukan `npm run dev`). Ini menambahkan akun demo
+  `demo@yourway.local` / `demo12345` yang sudah punya hasil tes, plus 15 mahasiswa contoh supaya ringkasan admin
+  ada isinya. Datanya hanya dibuat sekali; setelah itu `npm run demo` sama saja dengan `npm run dev`.
+- Website punya tombol mode gelap/terang (awalnya ikut setting laptop/HP) dan tombol bahasa ID/EN. Bahasa Inggris
+  hanya untuk sisi mahasiswa; menu admin tetap bahasa Indonesia.
 - Perubahan pada `public/` (HTML, CSS, JS halaman) langsung terlihat setelah halaman dimuat ulang.
 - Perubahan pada `server/` membuat server menyala ulang otomatis.
 - Tanpa `DATABASE_URL`, server memakai PGlite (PostgreSQL tertanam) dan menyimpan data di folder `data/`.
@@ -54,9 +59,12 @@ public/                     FRONTEND: yang dibuka peramban
   app/*.html                halaman mahasiswa (dasbor, asesmen, hasil, riwayat, pengaturan)
   admin/*.html              halaman Operator Admin
   css/styles.css            seluruh gaya tampilan (warna dan huruf ada di bagian :root)
-  js/umum.js                fungsi bersama: panggilan API, templat HTML, menu samping, toast, modal
-  js/grafik.js              diagram radar
+  js/awal.js                memasang tema (gelap/terang) dan bahasa sebelum halaman tampil
+  js/bahasa.js              semua teks tampilan mahasiswa dalam bahasa Indonesia dan Inggris
+  js/umum.js                fungsi bersama: panggilan API, templat HTML, menu samping, toast, modal, tombol tema/bahasa
   js/hasil-bagian.js        potongan tampilan hasil (dipakai dasbor dan halaman hasil)
+  js/grafik.js              spider chart di halaman hasil
+  js/ikon.js                ikon vector dari Lucide (lisensi ISC, tercantum di berkas)
   js/halaman/*.js           satu berkas JS untuk setiap halaman
 server/                     BACKEND: Node.js + Express
   index.js                  titik masuk server
@@ -64,7 +72,9 @@ server/                     BACKEND: Node.js + Express
   bms/engine.js             mesin BMS: skor berbobot, gap, SFS, aturan (+ engine.test.js)
   ai.js                     penjelasan AI (Groq/Gemini/Qwen) dengan cadangan templat
   schema.sql                skema PostgreSQL (sesuai Tabel 3.7)
-  seed/data.js              data awal: 16 karier, 18 indikator, 36 butir, profil karier, aturan, ambang
+  seed/data.js              data awal: 16 karier, 18 indikator, 36 butir, profil karier, aturan, ambang, terjemahan
+  demo.js                   akun demo dan mahasiswa contoh untuk `npm run demo`
+  simpan-asesmen.js         menghitung dan menyimpan satu asesmen (dipakai API dan demo)
 docs/                       laporan, panduan deploy, catatan implementasi
 ```
 
@@ -72,7 +82,8 @@ docs/                       laporan, panduan deploy, catatan implementasi
 
 | Mau mengubah | Berkas |
 | --- | --- |
-| Teks halaman depan | `public/index.html` |
+| Teks yang dilihat mahasiswa (ID dan EN) | `public/js/bahasa.js` |
+| Warna mode gelap | `public/css/styles.css` (bagian `:root[data-tema='gelap']`) |
 | Warna, huruf, tata letak | `public/css/styles.css` |
 | Halaman hasil | `public/js/halaman/hasil.js`, `public/js/hasil-bagian.js`, `public/js/grafik.js` |
 | Kuesioner dan pilih karier | `public/js/halaman/asesmen.js` |
@@ -96,12 +107,14 @@ setiap kali menampilkan data, jangan menyusun `innerHTML` dengan menyambung stri
 | FR-03 Kuesioner Likert | 36 butir Subbab 3.3; `[okupasi]` diganti karier pilihan; draf tersimpan di peramban |
 | FR-04 Skor Y, X1, X2 | Rata-rata butir, normalisasi min-max 0–100, skor berbobot |
 | FR-05 Gap, SFS, prioritas | `Gap = max(Req − S, 0)`, `SFS = 100 − Σ(w × Gap)`, prioritas dari `w × Gap` terbesar |
-| FR-06 SFS 16 karier | Peringkat 16 karier, karier paling selaras, status Selaras/Berbeda |
-| FR-07 Tampilan hasil | Papan hasil, diagram radar skor terhadap kebutuhan, tabel rincian per indikator |
+| FR-06 SFS 16 karier | Dihitung untuk 16 karier; yang tertinggi jadi hasil akhir, tiga berikutnya jadi alternatif |
+| FR-07 Tampilan hasil | Disederhanakan: karier paling cocok, kekuatan, yang bisa dilatih, spider chart, 3 alternatif, tanpa angka (lihat catatan implementasi) |
 | FR-08 Penjelasan AI | Dipanggil terpisah setelah skor tampil; cadangan templat |
 | Kelola instrumen dan model | Butir, bobot indikator, ambang, aturan R1–R4, profil karier (tambah, ubah, hapus) |
 | Kelola akun dan pantau agregat | Akun pengguna; ringkasan gabungan tanpa nama |
 | NFR | Responsif; Bcrypt; hasil hanya untuk pemilik akun; persetujuan saat daftar; hapus akun |
+
+Penjelasan kode dengan bahasa santai ada di [`docs/PANDUAN_KODE.md`](docs/PANDUAN_KODE.md).
 
 Keputusan implementasi dan hal yang perlu dilengkapi tim ada di
 [`docs/CATATAN_IMPLEMENTASI.md`](docs/CATATAN_IMPLEMENTASI.md).

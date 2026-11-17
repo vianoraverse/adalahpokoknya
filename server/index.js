@@ -8,6 +8,7 @@ import { adminRouter } from './routes/admin.js';
 import { asesmenRouter } from './routes/asesmen.js';
 import { authRouter } from './routes/auth.js';
 import { seed } from './seed/seed.js';
+import { isiDemo } from './demo.js';
 const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
@@ -31,6 +32,8 @@ app.use((_req, res) => res.status(404).sendFile(path.join(config.publik, '404.ht
 app.use(penanganGalat);
 const db = await getDb();
 await seed(db);
+// `npm run demo` menambahkan akun demo dan mahasiswa contoh (sekali saja).
+if (process.argv.includes('--demo')) await isiDemo(db);
 app.listen(config.port, () => {
   console.log(`YourWay API berjalan di http://localhost:${config.port} (basis data: ${db.jenis})`);
 });

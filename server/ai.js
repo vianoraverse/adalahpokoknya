@@ -10,55 +10,67 @@ const PENYEDIA = {
   gemini: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.0-flash' },
   qwen: { baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
 };
-const b = (n) => (Math.round(n * 10) / 10).toLocaleString('id-ID', { maximumFractionDigits: 1 });
+// ['A'] → 'A', ['A', 'B'] → 'A dan B', ['A', 'B', 'C'] → 'A, B, dan C'
+const daftar = (xs) =>
+  xs.length <= 2 ? xs.join(' dan ') : `${xs.slice(0, -1).join(', ')}, dan ${xs[xs.length - 1]}`;
+
+/** Penjelasan cadangan (dipakai kalau AI tidak aktif atau gagal). Bahasanya sengaja dibuat sederhana. */
 export function penjelasanTemplat(d) {
+  if (d.bahasa === 'en') return penjelasanTemplatEn(d);
   const p = [];
   p.push(
-    `Kamu memilih karier ${d.karierPilihan}. Skor niat karier (Y) kamu ${b(d.skor.Y)} dari 100 (${d.kategori.Y}), ` +
-      `soft skill intrapersonal (X1) ${b(d.skor.X1)} (${d.kategori.X1}), dan soft skill interpersonal (X2) ${b(d.skor.X2)} (${d.kategori.X2}). ` +
-      `Soft Skill Fit Score terhadap karier pilihanmu ${b(d.skor.SFS)} dari 100 (${d.kategori.SFS}).`,
+    d.samaDenganPilihan
+      ? `Dari jawabanmu, ${d.karierHasil} memang karier yang paling cocok dengan soft skill kamu saat ini.`
+      : `Kamu awalnya memilih ${d.karierPilihan}, tapi dari jawabanmu, soft skill kamu saat ini lebih cocok ke ${d.karierHasil}.`,
   );
-  p.push(
-    `Kombinasi niat dan kesesuaian ini masuk aturan ${d.aturan.kode}: ${d.aturan.interpretasi.toLowerCase()}. ${d.aturan.teks}`,
-  );
-  if (d.kekuatan.length) {
-    p.push(`Soft skill terkuatmu saat ini: ${d.kekuatan.map((k) => `${k.nama} (${b(k.skor)})`).join(', ')}.`);
-  }
-  if (d.prioritas.length) {
+  if (d.kembangkan === null) {
+    p.push('Ulangi tesnya untuk melihat soft skill yang bisa kamu latih untuk karier ini.');
+  } else if (d.kembangkan.length) {
     p.push(
-      'Prioritas pengembangan, diurutkan dari yang paling berpengaruh terhadap kesesuaian:\n' +
-        d.prioritas
-          .map(
-            (x, i) =>
-              `${i + 1}. ${x.nama}: skormu ${b(x.skor)}, kebutuhan karier ${b(x.req)} (selisih ${b(x.gap)}). ${x.saran}`,
-          )
-          .join('\n'),
+      `Kalau mau makin siap jadi ${d.karierHasil}, mulai dari melatih ${daftar(d.kembangkan.map((k) => k.nama))}.` +
+        (d.kembangkan.length > 1 ? ' Nggak harus sekaligus, satu per satu juga cukup.' : ''),
     );
   } else {
-    p.push('Semua indikator soft skill kamu sudah memenuhi level kebutuhan karier ini.');
+    p.push(`Soft skill kamu sudah sesuai dengan kebutuhan ${d.karierHasil}. Langkah berikutnya, cari pengalaman nyata seperti proyek, lomba, atau magang.`);
   }
-  for (const t of d.tambahan) {
-    if (t.kode === 'ALTERNATIF') {
-      p.push(
-        `${d.karierTeratas.nama} memiliki Soft Skill Fit Score ${b(d.karierTeratas.sfs)}, lebih tinggi dari karier pilihanmu. Karier ini layak kamu eksplorasi sebagai alternatif.`,
-      );
-    } else {
-      p.push(t.teks);
-    }
-  }
-  p.push(
-    'Hasil ini adalah gambaran dari jawabanmu sendiri, bukan penilaian mutlak. Kamu bisa mengulang asesmen kapan saja untuk melihat perkembangannya.',
-  );
+  p.push('Hasil ini cuma gambaran dari jawabanmu sendiri, bukan penilaian pasti. Kamu bisa mengulang tesnya kapan saja.');
   return p.join('\n\n');
 }
-const SISTEM = `Kamu adalah penyusun penjelasan pada aplikasi YourWay, alat ukur niat karier mahasiswa Teknik Informatika berbasis soft skill.
-Tugasmu HANYA menarasikan hasil yang sudah dihitung sistem. Aturan:
-- Jangan mengubah, menambah, atau menafsir ulang angka, kategori, aturan, karier, maupun prioritas yang diberikan.
-- Jangan membuat rekomendasi karier baru atau menyebut skor yang tidak ada di data.
-- Tulis dalam bahasa Indonesia yang hangat dan lugas untuk mahasiswa, sapa dengan "kamu".
-- 3 sampai 5 paragraf pendek, tanpa markdown, tanpa judul, tanpa daftar bernomor selain untuk prioritas pengembangan.
-- Jelaskan: arti skor niat dan soft skill, arti Soft Skill Fit Score terhadap karier pilihan, aturan yang terpicu, lalu langkah konkret untuk tiap prioritas pengembangan.
-- Tutup dengan satu kalimat bahwa hasil berasal dari penilaian diri dan dapat diulang.`;
+
+// ['A', 'B', 'C'] → 'A, B, and C'
+const daftarEn = (xs) =>
+  xs.length <= 2 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')}, and ${xs[xs.length - 1]}`;
+
+function penjelasanTemplatEn(d) {
+  const p = [];
+  p.push(
+    d.samaDenganPilihan
+      ? `Based on your answers, ${d.karierHasil} is the career that fits your soft skills best right now.`
+      : `You first picked ${d.karierPilihan}, but based on your answers, your soft skills currently fit ${d.karierHasil} better.`,
+  );
+  if (d.kembangkan === null) {
+    p.push('Retake the test to see which soft skills to practice for this career.');
+  } else if (d.kembangkan.length) {
+    p.push(
+      `To get more ready for ${d.karierHasil}, start by practicing ${daftarEn(d.kembangkan.map((k) => k.nama))}.` +
+        (d.kembangkan.length > 1 ? ' No need to do them all at once, one at a time is fine.' : ''),
+    );
+  } else {
+    p.push(`Your soft skills already match what ${d.karierHasil} needs. Next, look for real experience such as projects, competitions, or internships.`);
+  }
+  p.push('This result is only a picture based on your own answers, not a final judgment. You can retake the test any time.');
+  return p.join('\n\n');
+}
+
+const SISTEM = `Kamu menulis penjelasan singkat untuk halaman hasil YourWay, tugas kuliah yang membantu mahasiswa Teknik Informatika melihat karier TIK yang cocok dengan soft skill-nya.
+Aturan:
+- Hanya pakai data yang diberikan. Jangan menambah karier, angka, atau saran baru.
+- Jangan menyebut angka, skor, persentase, rumus, atau istilah teknis.
+- Tulis dalam bahasa yang diminta pada field "bahasa" ("id" = Bahasa Indonesia santai dengan sapaan "kamu", "en" = plain, friendly English).
+- Jangan berlebihan atau terlalu memotivasi.
+- Maksimal 3 paragraf pendek, tanpa markdown, tanpa daftar.
+- Isi: karier hasil (sebut juga pilihan awalnya kalau berbeda), soft skill yang sebaiknya dilatih dulu, lalu satu kalimat bahwa ini hanya gambaran dan tesnya bisa diulang.`;
+
 export async function susunPenjelasan(d) {
   const { provider, apiKey } = config.ai;
   const preset = PENYEDIA[provider];

@@ -56,6 +56,10 @@ function bukaFormulir(b) {
       </select>
     </label>
     <label>Teks pertanyaan <textarea name="teks" rows="3" maxlength="500">${b?.teks ?? ''}</textarea></label>
+    <label>Teks pertanyaan (English)
+      <textarea name="teksEn" rows="3" maxlength="500">${b?.teks_en ?? ''}</textarea>
+      <small>Opsional. Kalau kosong, mahasiswa yang memilih English melihat teks bahasa Indonesia. Tulis [okupasi] juga di sini.</small>
+    </label>
     <label>Dasar sumber <input name="dasar" value="${b?.dasar ?? ''}" maxlength="200" /></label>
     <label class="centang"><input type="checkbox" name="aktif" ${!b || b.aktif ? html`checked` : ''} /><span>Tampilkan pada kuesioner</span></label>
     <div class="formulir__aksi">
@@ -66,7 +70,13 @@ function bukaFormulir(b) {
   $('form', d).addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = isian(e.target);
-    const body = { indikatorId: Number(f.indikatorId) || undefined, teks: f.teks, dasar: f.dasar, aktif: f.aktif === 'on' };
+    const body = {
+      indikatorId: Number(f.indikatorId) || undefined,
+      teks: f.teks,
+      teksEn: f.teksEn,
+      dasar: f.dasar,
+      aktif: f.aktif === 'on',
+    };
     try {
       if (b) await api(`/admin/items/${b.id}`, { method: 'PUT', body });
       else await api('/admin/items', { body });

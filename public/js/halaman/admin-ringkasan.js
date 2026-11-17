@@ -1,5 +1,5 @@
 // Admin: ringkasan hasil gabungan tanpa nama (UC-10).
-import { $, api, bulat, gagalMuat, html, kode, mulaiHalaman, pasang, trek } from '../umum.js';
+import { $, api, bulat, catatanSementara, gagalMuat, html, kode, mulaiHalaman, pasang, trek } from '../umum.js';
 
 await mulaiHalaman('admin');
 
@@ -19,6 +19,7 @@ try {
       <div><dt>Total asesmen</dt><dd>${d.asesmen}</dd></div>
       <div><dt>Pilihan selaras dengan profil</dt><dd>${d.responden ? `${d.selaras ?? 0}/${d.responden}` : '–'}</dd></div>
     </dl>
+    ${catatanSementara()}
     ${d.responden === 0
       ? html`<div class="kosong"><p>Belum ada mahasiswa yang menyelesaikan asesmen. Ringkasan akan muncul setelah asesmen pertama masuk.</p></div>`
       : html`
@@ -30,6 +31,7 @@ try {
                 <span>${v ? kode(v) : ''} ${nama}</span>${trek(nilai ?? 0, { jalur: v ?? undefined })}<strong>${bulat(nilai)}</strong>
               </li>`)}
             </ul>
+            ${catatanSementara()}
           </section>
           <section class="panel">
             <h2>Sebaran aturan rekomendasi</h2>
@@ -42,6 +44,7 @@ try {
                 })}
               </tbody>
             </table>
+            ${catatanSementara()}
           </section>
         </div>
         <div class="dua-kolom">
@@ -62,6 +65,7 @@ try {
                 </tr>`)}
               </tbody>
             </table>
+            ${catatanSementara()}
           </section>
         </div>`}
   </div>`);

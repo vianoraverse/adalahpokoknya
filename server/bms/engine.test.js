@@ -124,3 +124,20 @@ test('skor tepat di ambang tidak turun kategori karena galat pembulatan', () => 
   assert.equal(h.kategori.X1, 'sedang');
   assert.ok(!h.aturanTambahan.includes('X1_RENDAH'));
 });
+
+test('hasil untuk mahasiswa: karier paling cocok, prioritasnya, kekuatan, dan alternatif', () => {
+  // Y tinggi, X1 = 50, X2 = 50. Karier B (tanpa gap) lebih cocok daripada A yang dipilih.
+  const h = hitung(model([5, 4, 3, 3, 4, 2]));
+  assert.equal(h.karierTeratas.karierId, 2);
+  // Karier B tidak punya selisih, jadi tidak ada yang perlu dikembangkan untuk karier hasil.
+  assert.equal(h.prioritasHasil.length, 0);
+  // Data spider chart: semua soft skill untuk karier hasil (B).
+  assert.equal(h.gapHasil.length, 2);
+  assert.ok(h.gapHasil.every((g) => g.req === 50));
+  // Prioritas lama (untuk karier pilihan) tetap ada untuk keperluan admin.
+  assert.equal(h.prioritas[0].kode, 'ct');
+  // Alternatif tidak memuat karier hasil.
+  assert.deepEqual(h.alternatif.map((a) => a.karierId), [1]);
+  // Kekuatan hanya soft skill, tidak memuat indikator niat (Y).
+  assert.ok(h.kekuatan.every((k) => k.variabel !== 'Y'));
+});

@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Halaman tidak ditemukan | YourWay</title>
+    <title data-teks="judul.404">Halaman tidak ditemukan | YourWay</title>
+    <script src="/js/awal.js"></script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,10 +14,14 @@
   <body>
     <main class="tengah">
       <div class="kosong">
-        <h1>Jalur ini tidak ada</h1>
-        <p>Alamat yang kamu buka tidak ditemukan. Mungkin tautannya salah ketik atau halamannya sudah dipindahkan.</p>
-        <a class="tombol tombol--utama" href="/">Ke halaman depan</a>
+        <h1 data-teks="nf.judul">Jalur ini tidak ada</h1>
+        <p data-teks="nf.p">Alamat yang kamu buka tidak ditemukan. Mungkin tautannya salah ketik atau halamannya sudah dipindahkan.</p>
+        <a class="tombol tombol--utama" href="/" data-teks="nf.kembali">Ke halaman depan</a>
       </div>
     </main>
+    <script type="module">
+      import { siapkanHalamanStatis } from '/js/umum.js';
+      siapkanHalamanStatis();
+    </script>
   </body>
 </html>

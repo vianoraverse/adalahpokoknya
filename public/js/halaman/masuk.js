@@ -1,5 +1,7 @@
 // Halaman masuk.
-import { $, $$, api, berandaPeran, isian, sesi } from '../umum.js';
+import { $, $$, api, berandaPeran, isian, sesi, siapkanHalamanStatis, t } from '../umum.js';
+
+siapkanHalamanStatis();
 
 const lanjut = new URLSearchParams(location.search).get('lanjut');
 // Tautan "Daftar" membawa serta tujuan setelah masuk.
@@ -21,7 +23,7 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   galat.hidden = true;
   tombol.disabled = true;
-  tombol.textContent = 'Memeriksa…';
+  tombol.textContent = t('masuk.memeriksa');
   try {
     const { pengguna } = await api('/auth/login', { body: isian(form) });
     setelahMasuk(pengguna);
@@ -29,6 +31,6 @@ form.addEventListener('submit', async (e) => {
     galat.textContent = err.message;
     galat.hidden = false;
     tombol.disabled = false;
-    tombol.textContent = 'Masuk';
+    tombol.textContent = t('masuk.tombol');
   }
 });

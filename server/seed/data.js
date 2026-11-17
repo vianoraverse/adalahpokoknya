@@ -441,3 +441,83 @@ export const PENGATURAN = [
   ['selisih_alternatif', 10, 'Selisih SFS minimal untuk menampilkan karier alternatif'],
   ['jumlah_prioritas', 3, 'Jumlah indikator prioritas pengembangan'],
 ];
+
+/* ---------- Terjemahan bahasa Inggris (untuk tampilan mahasiswa) ---------- */
+
+/** Deskripsi karier, berdasarkan kode karier. */
+export const DESKRIPSI_KARIER_EN = {
+  programmer: 'Writes, tests, and maintains program code based on the software design.',
+  'system-analyst': 'Gathers user needs and turns them into a system design.',
+  'software-engineer': 'Designs and builds software end to end, from architecture to release.',
+  dba: 'Keeps databases available, secure, and fast to access.',
+  'data-analyst': 'Turns data into findings that help people make decisions.',
+  'network-admin': 'Runs and monitors computer networks day to day.',
+  'network-engineer': 'Designs, builds, and optimizes network infrastructure.',
+  sysadmin: 'Manages servers, operating systems, and the services that run on them.',
+  'it-support': 'Helps users solve hardware and software problems.',
+  'it-pm': 'Leads IT projects so they finish on scope, on time, and on budget.',
+  'it-governance': 'Makes sure IT is managed according to policies, standards, and regulations.',
+  cybersecurity: 'Protects systems and data from security threats.',
+  'it-service-manager': 'Manages IT services so they meet the agreed service levels.',
+  'enterprise-architect': 'Aligns technology architecture with the direction of the business.',
+  'web-mobile-dev': 'Builds web and mobile apps that people use directly.',
+  multimedia: 'Creates visual, audio, and interactive content for digital media.',
+};
+
+/** Saran pengembangan, berdasarkan kode indikator soft skill. */
+export const SARAN_EN = {
+  'critical-thinking': 'Compare at least two sources before drawing a conclusion, and write down the assumptions you use in analysis tasks.',
+  'problem-solving': 'Practice breaking problems into smaller parts with coding exercises or case studies, then review the solution you chose.',
+  creativity: 'Join a hackathon or a side project, and try at least one different approach whenever the usual one gets stuck.',
+  'ethical-analysis': 'Learn the professional code of ethics in IT, and get used to asking who is affected before you decide.',
+  'self-development': 'Set a weekly learning goal outside your coursework and keep track of your progress.',
+  flexibility: 'Try a new technology or a different role in group projects so you get used to adjusting plans.',
+  discipline: 'Use a schedule and personal deadlines, and cut down on distractions while working on important things.',
+  teamwork: 'Take a clear part in group work or student organizations, and offer help when teammates struggle.',
+  'oral-communication': 'Practice presenting more often and ask for feedback on how clearly you explain things.',
+  'written-communication': 'Get used to writing documentation and short reports, and adjust your style to the reader.',
+  negotiation: 'Practice stating what you need while looking for common ground when dividing tasks or setting priorities.',
+  leadership: 'Volunteer to lead small things, such as coordinating a group assignment or running an event.',
+  intercultural: 'Join activities across majors, regions, or countries so you get used to working with different backgrounds.',
+  'conflict-management': 'When people disagree, try being the mediator: listen to both sides and focus on the problem.',
+};
+
+/** Terjemahan 36 butir, urutannya sama dengan BUTIR. */
+export const BUTIR_EN = [
+  'I am interested in working as a [okupasi].',
+  'I enjoy imagining myself working as a [okupasi].',
+  'I intend to work as a [okupasi] after I graduate.',
+  'I expect to apply for a job as a [okupasi] in the near future.',
+  'I actively look for information about being a [okupasi] (for example tasks, requirements, and job openings).',
+  'I have done things to prepare myself to become a [okupasi] (for example courses, projects, or internships).',
+  'I am sure that [okupasi] is my career choice, not just something I am trying out.',
+  'I would still choose [okupasi] even if other IT careers were available.',
+  'I compare several sources of information before drawing a conclusion.',
+  'I question the assumptions behind an opinion before accepting it.',
+  'When I face a problem, I break it into smaller parts before looking for a solution.',
+  'I review the solution I chose and improve it if the result is not good enough.',
+  'I am confident I can come up with new ideas to finish a task.',
+  'I try a different way when the usual way does not work.',
+  'I consider whether a decision is fair to the people it affects.',
+  'I refuse to be dishonest, such as cheating or plagiarizing, even if it would benefit me.',
+  'I regularly learn new things outside my coursework.',
+  'I set learning goals and keep track of my progress.',
+  'I can adjust my plans when the situation or the technology changes.',
+  'I can look at one problem from several points of view.',
+  'I finish tasks on time without needing to be reminded.',
+  'I can keep away from distractions when I have to work on something important.',
+  'In group work, I finish my part on time.',
+  'I help teammates who are having difficulties.',
+  'I can explain ideas out loud clearly and in a logical order.',
+  'I listen to the other person and respond to what they actually mean.',
+  'I can write reports or work messages that are easy for readers to understand.',
+  'I adjust my writing style to the reader (lecturer, peer, or client).',
+  'I can say what I want while still paying attention to what others need.',
+  'When opinions differ, I look for an agreement both sides can accept.',
+  'I can guide group members to stay focused on a shared goal.',
+  'I motivate group members whose spirit is dropping.',
+  'I am comfortable working with people of a different ethnicity, religion, or culture from mine.',
+  'I adjust how I communicate when dealing with people from a different cultural background.',
+  'I can mediate disagreements in a group without taking sides.',
+  'When a conflict happens, I stay calm and focus on the problem, not on the person.',
+];

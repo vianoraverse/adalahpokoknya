@@ -1,67 +1,71 @@
-// Potongan tampilan hasil asesmen yang dipakai di Dasbor dan halaman Hasil.
-import { NAMA_VARIABEL, bulat, html, kode, tingkat, trek } from './umum.js';
+// Potongan tampilan hasil tes yang dipakai di Dasbor dan halaman Hasil.
+// Yang ditampilkan ke mahasiswa sengaja dibuat sederhana: tanpa angka dan tanpa istilah teknis.
+import { bhs, catatanSementara, html, ikon, t, tHtml } from './umum.js';
+import { IKON_KARIER, IKON_SOFT_SKILL } from './ikon.js';
 
-/** Papan hasil: karier tujuan, arti aturan yang terpicu, dan Soft Skill Fit Score. */
-export function papanHasil(a) {
+/** Label kecocokan dari skor kesesuaian (SFS) karier hasil, memakai ambang yang diatur admin. */
+export function labelCocok(h) {
+  const sfs = h.karierTeratas.sfs;
+  if (sfs >= h.ambang.ambang_tinggi) return t('hasil.label.tinggi');
+  if (sfs >= h.ambang.ambang_rendah) return t('hasil.label.sedang');
+  return t('hasil.label.rendah');
+}
+
+/**
+ * Data yang ditampilkan. Hasil tes yang disimpan sebelum perubahan tampilan ini belum punya
+ * `prioritasHasil`, `kekuatan`, dan `alternatif`, jadi dihitung ulang dari data yang ada.
+ */
+export function dataTampil(a) {
   const h = a.hasil;
-  return html`<section class="hasil-papan gelap" aria-label="Ringkasan hasil">
-    <div class="hasil-papan__teks">
-      <p class="hasil-papan__label">Tujuan</p>
-      <p class="hasil-papan__tujuan">${a.karier.nama}</p>
-      <p class="hasil-papan__arti">${h.rekomendasi.utama.interpretasi}</p>
-      <p>${
-        h.status === 'Selaras'
-          ? 'Dari 16 karier, pilihanmu adalah yang paling selaras dengan profil soft skill-mu.'
-          : html`Karier yang paling selaras dengan profil soft skill-mu adalah <strong>${h.karierTeratas.nama}</strong> (SFS ${bulat(h.karierTeratas.sfs)}).`
+  const samaDenganPilihan = h.karierTeratas.karierId === a.karier.id;
+  return {
+    karierHasil: h.karierTeratas,
+    samaDenganPilihan,
+    label: labelCocok(h),
+    // null = tidak diketahui (hasil lama yang karier hasilnya beda dari pilihan); mahasiswa diminta ulang tes.
+    kembangkan: h.prioritasHasil ?? (samaDenganPilihan ? h.prioritas : null),
+    // Data spider chart. Hasil lama hanya punya data untuk karier pilihan, jadi chart hanya tampil kalau sama.
+    radar: h.gapHasil ?? (samaDenganPilihan ? h.gapPilihan : null),
+    kekuatan:
+      h.kekuatan ?? [...h.skorIndikator].filter((s) => s.variabel !== 'Y').sort((x, y) => y.skor - x.skor).slice(0, 3),
+    alternatif:
+      h.alternatif ??
+      [...h.sfsSemua].filter((s) => s.karierId !== h.karierTeratas.karierId).sort((x, y) => y.sfs - x.sfs).slice(0, 3),
+  };
+}
+
+/** Kotak paling atas: satu karier hasil akhir. `semuaKarier` = daftar dari /api/careers (untuk ikon dan deskripsi). */
+export function kotakHasil(a, semuaKarier = []) {
+  const d = dataTampil(a);
+  const k = semuaKarier.find((x) => x.id === d.karierHasil.karierId);
+  return html`<section class="hasil-papan gelap" aria-label="Hasil utama">
+    <div class="hasil-papan__ikon">${ikon(IKON_KARIER[k?.kode])}</div>
+    <div class="hasil-papan__isi">
+      <p class="hasil-papan__label">${t('hasil.palingCocok')}</p>
+      <p class="hasil-papan__tujuan">${d.karierHasil.nama}</p>
+      <p class="hasil-papan__cap"><span class="cap cap--isi">${d.label}</span></p>
+      ${k?.deskripsi ? html`<p class="hasil-papan__desk">${k.deskripsi}</p>` : ''}
+      <p class="hasil-papan__desk">${
+        d.samaDenganPilihan ? t('hasil.sama') : tHtml('hasil.beda', { pilihan: a.karier.nama })
       }</p>
-      <p class="hasil-papan__cap">
-        <span class="cap ${h.status === 'Selaras' ? 'cap--isi' : ''}">${h.status}</span>
-        <span class="cap">Aturan ${h.aturan}</span>
-      </p>
     </div>
-    <div class="hasil-papan__skor">
-      <span>Soft Skill Fit Score</span>
-      <strong class="hasil-papan__angka">${bulat(h.sfsPilihan)}</strong>
-      ${tingkat(h.kategori.SFS)}
-    </div>
+    ${catatanSementara()}
   </section>`;
 }
 
-/** Tiga skor variabel (Y, X1, X2) sebagai trek dengan batas kategori. */
-export function skorTiga(h) {
-  const batas = [h.ambang.ambang_rendah, h.ambang.ambang_tinggi];
-  return html`<section class="panel" aria-label="Skor niat karier dan soft skill">
-    <div class="skor-tiga">
-      ${['Y', 'X1', 'X2'].map((v) => html`<div>
-        <p class="skor-tiga__kepala">${kode(v)} ${NAMA_VARIABEL[v]}</p>
-        <p class="skor-tiga__nilai"><strong>${bulat(h.skor[v])}</strong> ${tingkat(h.kategori[v])}</p>
-        ${trek(h.skor[v], { jalur: v, batas, label: `${NAMA_VARIABEL[v]}: ${bulat(h.skor[v])} dari 100, kategori ${h.kategori[v]}` })}
-        <p class="skor-tiga__skala" aria-hidden="true">
-          <span style="left:0;transform:none">0</span>
-          ${batas.map((b) => html`<span style="left:${b}%">${b}</span>`)}
-          <span style="left:auto;right:0;transform:none">100</span>
-        </p>
-      </div>`)}
-    </div>
-  </section>`;
-}
+/** Ikon soft skill di dalam lingkaran kuning. */
+export const ikonSoftSkill = (kode) => html`<span class="ikon-bulat">${ikon(IKON_SOFT_SKILL[kode])}</span>`;
 
-/** Rute pengembangan: dari posisi sekarang, lewat soft skill prioritas, ke karier tujuan. */
-export function rutePengembangan(a, { ringkas = false } = {}) {
-  const h = a.hasil;
-  if (h.prioritas.length === 0) {
-    return html`<p>Semua indikator soft skill-mu sudah memenuhi level kebutuhan ${a.karier.nama}.</p>`;
+/** Saran sesuai bahasa. Hasil lama belum punya saranEn, jadi memakai saran bahasa Indonesia. */
+const saran = (p) => (bhs() === 'en' && p.saranEn ? p.saranEn : p.saran);
+
+/** Daftar soft skill yang bisa dilatih, masing-masing dengan satu saran. */
+export function daftarLatih(d) {
+  if (d.kembangkan === null) return html`<p>${t('hasil.latihUlang')}</p>`;
+  if (d.kembangkan.length === 0) {
+    return html`<p>${t('hasil.latihSudah', { karier: d.karierHasil.nama })}</p>`;
   }
-  return html`<ol class="rute-kembang">
-    <li class="rute-kembang__awal"><p class="rute-kembang__ujung">Posisimu sekarang <span>SFS ${bulat(h.sfsPilihan)}</span></p></li>
-    ${h.prioritas.map((p) => html`<li class="rute-kembang__stasiun">
-      <div class="rute-kembang__kepala">
-        <h3>${p.nama} ${kode(p.variabel)}</h3>
-        <span>skor ${bulat(p.skor)}, kebutuhan ${bulat(p.req)}</span>
-      </div>
-      ${trek(p.skor, { req: p.req, jalur: p.variabel })}
-      ${ringkas ? '' : html`<p>${p.saran}</p>`}
-    </li>`)}
-    <li class="rute-kembang__tujuan"><p class="rute-kembang__ujung">${a.karier.nama}</p></li>
-  </ol>`;
+  return html`<ul class="daftar-latih">
+    ${d.kembangkan.map((p) => html`<li>${ikonSoftSkill(p.kode)}<div><h3>${p.nama}</h3><p>${saran(p)}</p></div></li>`)}
+  </ul>`;
 }

@@ -1,12 +1,19 @@
 // Asesmen: pilih satu karier, lalu jawab kuesioner Likert halaman demi halaman.
-import { $, $$, NAMA_VARIABEL, api, gagalMuat, html, kode, mulaiHalaman, pasang } from '../umum.js';
+import { $, api, bhs, gagalMuat, html, ikon, mulaiHalaman, pasang, t, tHtml } from '../umum.js';
+import { IKON_KARIER } from '../ikon.js';
 
 await mulaiHalaman('mahasiswa');
 const utama = $('#utama');
 
-const SKALA = ['Sangat tidak setuju', 'Tidak setuju', 'Netral', 'Setuju', 'Sangat setuju'];
+const SKALA = [1, 2, 3, 4, 5].map((n) => t(`tes.skala.${n}`));
 const PER_HALAMAN = 6;
 const KUNCI_DRAF = 'yourway.draf-asesmen';
+
+/** Mengganti [okupasi] di teks pertanyaan dengan nama karier. Di bahasa Inggris, "a" jadi "an" bila perlu. */
+function isiOkupasi(teks, nama) {
+  if (bhs() === 'en') teks = teks.replace(/\ba \[okupasi\]/g, `${/^[aeiou]/i.test(nama) ? 'an' : 'a'} [okupasi]`);
+  return teks.replaceAll('[okupasi]', nama);
+}
 
 // Draf disimpan di peramban supaya jawaban tidak hilang bila halaman tertutup.
 function bacaDraf() {
@@ -34,15 +41,15 @@ const jumlahHalaman = () => Math.ceil(butir.length / PER_HALAMAN);
 function tampilPilihKarier() {
   pasang(utama, html`<div class="halaman">
     <header class="halaman__kepala">
-      <h1>Mau ke mana?</h1>
-      <p>Pilih satu karier yang paling ingin kamu tempuh. Pernyataan niat karier akan menanyakan karier ini, dan soft skill-mu dicocokkan dengan kebutuhannya.</p>
+      <h1>${t('tes.pilihJudul')}</h1>
+      <p>${t('tes.pilihP')}</p>
     </header>
     <div class="pilih-karier" role="radiogroup" aria-label="Karier pilihan">
       ${karier.map((k, i) => html`<label>
         <input type="radio" name="karier" value="${k.id}" ${draf.karierId === k.id ? html`checked` : ''} />
         <span class="pilih-karier__no">${String(i + 1).padStart(2, '0')}</span>
-        <span class="pilih-karier__teks"><strong>${k.nama}</strong><span>${k.deskripsi}</span></span>
-        <span class="pilih-karier__tanda cap">Tujuanmu</span>
+        <span class="pilih-karier__teks"><strong>${ikon(IKON_KARIER[k.kode])} ${k.nama}</strong><span>${k.deskripsi}</span></span>
+        <span class="pilih-karier__tanda cap">${t('tes.dipilih')}</span>
       </label>`)}
     </div>
     <div class="lengket-bawah">
@@ -53,10 +60,10 @@ function tampilPilihKarier() {
 
   const segarkan = () => {
     const p = pilihan();
-    pasang($('#info-pilihan'), p ? html`Tujuan: <strong>${p.nama}</strong>` : html`Belum ada karier yang dipilih.`);
+    pasang($('#info-pilihan'), p ? tHtml('tes.pilihan', { nama: p.nama }) : t('tes.belumPilih'));
     const tombol = $('#tombol-lanjut');
     tombol.disabled = !p;
-    tombol.textContent = terjawab() > 0 ? 'Lanjutkan kuesioner' : 'Lanjut ke kuesioner';
+    tombol.textContent = t(terjawab() > 0 ? 'tes.lanjutkan' : 'tes.lanjutKe');
   };
   segarkan();
 
@@ -88,14 +95,14 @@ function tampilKuesioner(galat = '') {
       <div id="trek-kemajuan"></div>
     </div>
     <header class="halaman__kepala">
-      <h1>${variabel.map((v) => NAMA_VARIABEL[v]).join(' dan ')}</h1>
-      <p>Jawab sesuai keadaanmu saat ini. Tidak ada jawaban benar atau salah.</p>
+      <h1>${t(`tes.bagian.${variabel[0]}`)}</h1>
+      <p>${t('tes.petunjuk')}</p>
     </header>
 
     <ol class="butir">
       ${bagian.map((b, i) => html`<li>
         <fieldset>
-          <legend>${kode(b.variabel)} ${b.teks.replaceAll('[okupasi]', p.nama)}</legend>
+          <legend>${isiOkupasi(b.teks, p.nama)}</legend>
           <div class="likert">
             ${SKALA.map((s, n) => html`<label>
               <input type="radio" name="butir-${b.id}" value="${n + 1}" ${draf.jawaban[b.id] === n + 1 ? html`checked` : ''}
@@ -110,17 +117,17 @@ function tampilKuesioner(galat = '') {
 
     ${galat ? html`<p class="galat" role="alert">${galat}</p>` : ''}
     <div class="lengket-bawah">
-      <button type="button" class="tombol" id="tombol-mundur">${halaman === 0 ? 'Ganti karier' : 'Sebelumnya'}</button>
-      <span class="lengket-bawah__hal">Halaman ${halaman + 1} dari ${jumlahHalaman()}</span>
-      <button type="button" class="tombol tombol--utama" id="tombol-maju">${terakhir ? 'Kirim jawaban' : 'Lanjut'}</button>
+      <button type="button" class="tombol" id="tombol-mundur">${t(halaman === 0 ? 'tes.gantiKarier' : 'tes.sebelumnya')}</button>
+      <span class="lengket-bawah__hal">${t('tes.halaman', { n: halaman + 1, total: jumlahHalaman() })}</span>
+      <button type="button" class="tombol tombol--utama" id="tombol-maju">${t(terakhir ? 'tes.kirim' : 'tes.lanjut')}</button>
     </div>
   </div>`);
 
   const segarkan = () => {
     const n = terjawab();
-    $('#hitung-jawab').textContent = `${n} dari ${butir.length} terjawab`;
+    $('#hitung-jawab').textContent = t('tes.terjawab', { n, total: butir.length });
     pasang($('#trek-kemajuan'), html`<div class="trek" style="--v:${(n / butir.length) * 100}" role="progressbar"
-      aria-label="Kemajuan kuesioner" aria-valuemin="0" aria-valuemax="${butir.length}" aria-valuenow="${n}">
+      aria-label="${t('tes.kemajuan')}" aria-valuemin="0" aria-valuemax="${butir.length}" aria-valuenow="${n}">
       <span class="trek__isi"></span><span class="trek__titik"></span></div>`);
     $('#tombol-maju').disabled = terakhir ? n < butir.length : !bagian.every((b) => draf.jawaban[b.id]);
   };
@@ -148,7 +155,7 @@ function tampilKuesioner(galat = '') {
 /* ---------- Kirim jawaban ---------- */
 
 async function kirim() {
-  pasang(utama, html`<div class="tengah"><p class="memuat" role="status">Jawaban terkirim. Menghitung skor dan kesesuaian…</p></div>`);
+  pasang(utama, html`<div class="tengah"><p class="memuat" role="status">${t('tes.menghitung')}</p></div>`);
   try {
     const jawaban = Object.fromEntries(butir.map((b) => [b.id, draf.jawaban[b.id]]));
     const { asesmen } = await api('/assessments', { body: { karierId: draf.karierId, jawaban } });
