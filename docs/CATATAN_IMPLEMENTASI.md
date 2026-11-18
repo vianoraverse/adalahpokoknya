@@ -1,9 +1,9 @@
-# Catatan implementasi
+# Catatan Implementasi
 
 Website dibangun dari `LAPORAN_BAB_1-3.md` (isi Google Docs per 16 November 2026). Catatan ini mencatat
 bagian yang masih perlu diisi tim dan keputusan yang diambil ketika isi laporan tidak seragam.
 
-## Perlu dilengkapi tim
+## Perlu Dilengkapi Tim
 
 1. **Profil kebutuhan soft skill per karier masih data ilustratif.** Laporan (Subbab 3.4) menetapkan
    `Req(r, i)` dan `w(r, i)` dihitung dari lowongan kerja jenjang awal 2026, tetapi angkanya belum ada di
@@ -22,7 +22,7 @@ bagian yang masih perlu diisi tim dan keputusan yang diambil ketika isi laporan 
 
 ## Keputusan saat isi laporan berbeda antarbagian
 
-| Bagian laporan | Temuan | Yang diimplementasikan |
+| Bagian laporan | Temuan | Implementasi |
 | --- | --- | --- |
 | 3.8.2 Prototype dan 3.9.1 | Masih memuat rancangan lama: *Intention Fit Score*, radar lima variabel (Learning Behavior, Self-Efficacy, Technical Competency, Soft Skill, Project Experience), soal pilihan ganda teknis, *roadmap*, proyeksi skor | Mengikuti model pada Bab 2 dan Subbab 3.2–3.6: hanya Y, X1, X2, dan SFS; radar 14 indikator soft skill terhadap kebutuhan karier; tanpa soal teknis, tanpa skor *self-efficacy*, tanpa *roadmap* |
 | Tabel 3.4 | ID `FR-07` dipakai tiga kali | Dua yang terakhir diperlakukan sebagai kebutuhan admin tersendiri (kelola instrumen/model; kelola akun dan pantau agregat) |
@@ -32,9 +32,9 @@ bagian yang masih perlu diisi tim dan keputusan yang diambil ketika isi laporan 
 | 2.7.3 | Ambang kategori "dapat diubah Operator Admin" | Ambang kategori, ambang aturan (75), selisih alternatif (10), dan jumlah prioritas (3) dapat diubah admin |
 | 3.5.2 | Status Selaras/Berbeda tidak menyebut kasus seri | Bila SFS karier pilihan sama dengan SFS tertinggi, status "Selaras" |
 
-## Tampilan hasil untuk mahasiswa disederhanakan
+## Tampilan Hasil untuk Mahasiswa
 
-Atas permintaan tim, halaman hasil, dasbor, dan riwayat mahasiswa tidak lagi menampilkan angka maupun istilah
+Halaman hasil, dasbor, dan riwayat mahasiswa tidak lagi menampilkan angka maupun istilah
 teknis. Yang ditampilkan:
 
 - Satu karier hasil akhir, yaitu karier dengan SFS tertinggi dari 16 karier (bisa berbeda dari karier yang
@@ -54,7 +54,7 @@ dihitung, disimpan, dan dipakai pada ringkasan admin.
 Y, X1, X2, SFS karier pilihan, status kesesuaian, dan prioritas. Tampilan sekarang tidak lagi memperlihatkannya
 kepada mahasiswa, dan hasil utamanya adalah karier paling cocok, bukan karier pilihan.
 
-## Fitur tambahan di luar laporan
+## Fitur Tambahan di Luar Laporan
 
 - **Mode gelap** dengan tombol ganti tema; awalnya mengikuti setting perangkat.
 - **Bahasa Inggris** untuk seluruh sisi mahasiswa (termasuk 36 pertanyaan, deskripsi karier, saran latihan, dan
@@ -66,7 +66,7 @@ kepada mahasiswa, dan hasil utamanya adalah karier paling cocok, bukan karier pi
 Hasil asesmen disimpan sebagai potret (skor, selisih, aturan, dan teks rekomendasi saat itu), sehingga
 perubahan bobot atau aturan oleh admin tidak mengubah hasil lama.
 
-## Hal kecil pada naskah laporan
+## Hal Kecil pada Naskah Laporan
 
 - Rujukan silang *self-efficacy* menyebut Subbab 2.2.4, sedangkan pembahasannya ada di 2.2.3.
 - Judul Subbab 2.4.3 muncul dua kali; yang kedua berisi kompetensi yang tidak dijadikan indikator.
