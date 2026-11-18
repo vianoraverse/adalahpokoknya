@@ -1,4 +1,4 @@
-// Data awal YourWay. Sumber: laporan Bab 2 dan Bab 3 (docs/LAPORAN_BAB_1-3.md).
+// Data awal YourWay. Sumber: laporan Bab 2 dan Bab 3 (documentation/LAPORAN_BAB_1-3.md).
 export const KARIER = [
   [
     'programmer',

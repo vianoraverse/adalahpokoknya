@@ -1,7 +1,7 @@
 // Validasi mesin skor terhadap perhitungan manual (Tabel 3.8: "Validasi mesin skor").
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { AMBANG_BAWAAN, hitung, kategori, normalisasi, tentukanAturan } from './engine.js';
+import { AMBANG_BAWAAN, hitung, kategori, normalisasi, tentukanAturan } from '../behavioral-model/engine.js';
 
 const dekat = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
 

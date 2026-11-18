@@ -1,5 +1,5 @@
 // Menghitung dan menyimpan satu asesmen. Dipakai oleh API (routes/asesmen.js) dan oleh data demo (demo.js).
-import { hitung } from './bms/engine.js';
+import { hitung } from '../behavioral-model/engine.js';
 import { HttpError } from './http.js';
 import { muatModel } from './model.js';
 

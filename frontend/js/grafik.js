@@ -56,7 +56,7 @@ export function gambarRadar(wadah, data, namaKarier, prioritas = []) {
           const [x, y] = titik(i, 100);
           return html`<line x1="${CX}" y1="${CY}" x2="${x}" y2="${y}" stroke="var(--line)" />`;
         })}
-        <polygon points="${poligon((d) => d.skor)}" fill="var(--x1)" fill-opacity="0.16" stroke="var(--x1)" stroke-width="2.5" stroke-linejoin="round" />
+        <polygon points="${poligon((d) => d.skor)}" fill="var(--aksen)" fill-opacity="0.16" stroke="var(--aksen)" stroke-width="2.5" stroke-linejoin="round" />
         <polygon points="${poligon((d) => d.req)}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round" />
         ${data.map((d, i) => {
           if (!utama(d)) return '';

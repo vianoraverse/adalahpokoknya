@@ -1,4 +1,4 @@
-import { AMBANG_BAWAAN } from './bms/engine.js';
+import { AMBANG_BAWAAN } from '../behavioral-model/engine.js';
 /** Memuat parameter model (indikator, butir aktif, profil karier, ambang) dari basis data. */
 export async function muatModel(q) {
   const [ind, but, prof, kar, set, atr] = await Promise.all([

@@ -5,10 +5,10 @@
   "description": "YourWay: Sistem Pemodelan Niat Karier Mahasiswa Teknik Informatika Berbasis Soft Skill",
   "type": "module",
   "scripts": {
-    "dev": "node --watch server/index.js",
-    "start": "node server/index.js",
-    "demo": "node --watch server/index.js --demo",
-    "test": "node --test server/bms/engine.test.js"
+    "dev": "node --watch backend/index.js",
+    "start": "node backend/index.js",
+    "demo": "node --watch backend/index.js --demo",
+    "test": "node --test testing/engine.test.js"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.2.17",

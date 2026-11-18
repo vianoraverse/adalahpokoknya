@@ -22,12 +22,6 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET ?? 'yourway-dev-secret-ganti-di-production',
   adminEmail: (process.env.ADMIN_EMAIL ?? 'admin@yourway.local').toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD ?? 'admin12345',
-  ai: {
-    provider: (process.env.AI_PROVIDER ?? 'none').toLowerCase(),
-    apiKey: process.env.AI_API_KEY ?? '',
-    model: process.env.AI_MODEL ?? '',
-    baseUrl: process.env.AI_BASE_URL ?? '',
-  },
-  publik: path.resolve(here, '../public'),
-  schemaPath: path.resolve(here, 'schema.sql'),
+  publik: path.resolve(here, '../frontend'),
+  schemaPath: path.resolve(here, '../database/schema.sql'),
 };

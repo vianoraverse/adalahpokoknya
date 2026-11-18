@@ -7,7 +7,7 @@ import { penanganGalat } from './http.js';
 import { adminRouter } from './routes/admin.js';
 import { asesmenRouter } from './routes/asesmen.js';
 import { authRouter } from './routes/auth.js';
-import { seed } from './seed/seed.js';
+import { seed } from '../database/seed.js';
 import { isiDemo } from './demo.js';
 const app = express();
 app.set('trust proxy', 1);
@@ -25,7 +25,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', asesmenRouter);
 app.use('/api', (_req, res) => res.status(404).json({ pesan: 'Alamat API tidak ditemukan.' }));
-// Frontend: berkas HTML, CSS, dan JS statis pada folder public/.
+// Frontend: berkas HTML, CSS, dan JS statis pada folder frontend/.
 // extensions: ['html'] membuat /masuk membuka masuk.html, /app/hasil membuka app/hasil.html, dst.
 app.use(express.static(config.publik, { extensions: ['html'] }));
 app.use((_req, res) => res.status(404).sendFile(path.join(config.publik, '404.html')));

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { susunPenjelasan } from '../ai.js';
 import { wajibLogin } from '../auth.js';
 import { getDb } from '../db.js';
 import { HttpError, bahasa, h } from '../http.js';
+import { susunRingkasan } from '../ringkasan.js';
 import { simpanAsesmen } from '../simpan-asesmen.js';
 export const asesmenRouter = Router();
 // Daftar 16 karier (publik, dipakai juga di halaman depan).
@@ -46,28 +46,43 @@ asesmenRouter.get(
     res.json({ butir: rows });
   }),
 );
-async function ambilAsesmen(q, id, penggunaId) {
+/** Data untuk kalimat "Ringkasnya" (tanpa identitas mahasiswa, hanya nama karier dan soft skill). */
+function ringkasan(a, bhs) {
+  const hs = a.hasil;
+  // Hasil lama (sebelum ada prioritasHasil) hanya punya prioritas untuk karier pilihan. Kalau karier hasilnya
+  // berbeda, datanya tidak ada (null) dan ringkasan meminta mahasiswa mengulang tes.
+  const sama = hs.karierTeratas.karierId === a.karier.id;
+  const kembangkan = hs.prioritasHasil ?? (sama ? hs.prioritas : null);
+  return susunRingkasan({
+    karierHasil: hs.karierTeratas.nama,
+    karierPilihan: a.karier.nama,
+    samaDenganPilihan: sama,
+    kembangkan: kembangkan?.map((p) => ({ nama: p.nama })) ?? null,
+    bahasa: bhs,
+  });
+}
+async function ambilAsesmen(q, id, penggunaId, bhs = 'id') {
   const { rows } = await q.query(
     `SELECT a.id, a.jenis, a.dibuat_pada, k.id AS karier_id, k.nama AS karier_nama, k.area_fungsi,
-            h.detail, pj.narasi, pj.sumber, pj.model, pj.bahasa
+            h.detail
      FROM asesmen a
      JOIN karier k ON k.id = a.karier_id
      JOIN hasil_skor h ON h.asesmen_id = a.id
-     LEFT JOIN penjelasan_ai pj ON pj.asesmen_id = a.id
      WHERE a.id = $1 AND a.pengguna_id = $2`,
     [id, penggunaId],
   );
   const r = rows[0];
   // Hasil hanya dapat diakses pemilik akun (NFR-Privacy): asesmen milik orang lain dianggap tidak ada.
   if (!r) throw new HttpError(404, 'Hasil asesmen tidak ditemukan.');
-  return {
+  const a = {
     id: r.id,
     jenis: r.jenis,
     dibuatPada: r.dibuat_pada,
     karier: { id: r.karier_id, nama: r.karier_nama, areaFungsi: r.area_fungsi },
     hasil: r.detail,
-    penjelasan: r.narasi ? { narasi: r.narasi, sumber: r.sumber, model: r.model, bahasa: r.bahasa } : null,
   };
+  a.ringkasan = ringkasan(a, bhs);
+  return a;
 }
 // Kirim jawaban → hitung skor (UC-11) → simpan hasil (FR-04 s.d. FR-06).
 asesmenRouter.post(
@@ -83,7 +98,7 @@ asesmenRouter.post(
     const db = await getDb();
     const penggunaId = req.pengguna.id;
     const id = await simpanAsesmen(db, penggunaId, d.karierId, d.jawaban);
-    res.status(201).json({ asesmen: await ambilAsesmen(db, id, penggunaId) });
+    res.status(201).json({ asesmen: await ambilAsesmen(db, id, penggunaId, bahasa(req)) });
   }),
 );
 asesmenRouter.get(
@@ -108,43 +123,6 @@ asesmenRouter.get(
   wajibLogin('mahasiswa'),
   h(async (req, res) => {
     const db = await getDb();
-    res.json({ asesmen: await ambilAsesmen(db, Number(req.params.id), req.pengguna.id) });
-  }),
-);
-// Penjelasan AI (UC-12) dipanggil terpisah setelah skor tampil (NFR-Performance).
-asesmenRouter.post(
-  '/assessments/:id/explanation',
-  wajibLogin('mahasiswa'),
-  h(async (req, res) => {
-    const db = await getDb();
-    const a = await ambilAsesmen(db, Number(req.params.id), req.pengguna.id);
-    // Penjelasan dari AI disimpan supaya tidak diminta ulang. Penjelasan templat selalu disusun ulang
-    // (murah), jadi perubahan teks templat langsung terlihat.
-    const bhs = bahasa(req);
-    if (a.penjelasan?.sumber === 'ai' && a.penjelasan.bahasa === bhs && !req.body?.ulang) {
-      res.json({ penjelasan: a.penjelasan });
-      return;
-    }
-    const hs = a.hasil;
-    const karierHasil = hs.karierTeratas.nama;
-    // Hasil lama (sebelum ada prioritasHasil) hanya punya prioritas untuk karier pilihan. Kalau karier hasilnya
-    // berbeda, datanya tidak ada (null) dan penjelasan meminta mahasiswa mengulang tes.
-    const kembangkan = hs.prioritasHasil ?? (hs.karierTeratas.karierId === a.karier.id ? hs.prioritas : null);
-    // Tanpa identitas mahasiswa: hanya nama karier dan nama soft skill.
-    const data = {
-      karierHasil,
-      karierPilihan: a.karier.nama,
-      samaDenganPilihan: hs.karierTeratas.karierId === a.karier.id,
-      kembangkan: kembangkan?.map((p) => ({ nama: p.nama, saran: bhs === 'en' && p.saranEn ? p.saranEn : p.saran })) ?? null,
-      bahasa: bhs,
-    };
-    const p = await susunPenjelasan(data);
-    await db.query(
-      `INSERT INTO penjelasan_ai (asesmen_id, narasi, sumber, model, bahasa) VALUES ($1,$2,$3,$4,$5)
-     ON CONFLICT (asesmen_id) DO UPDATE SET narasi = EXCLUDED.narasi, sumber = EXCLUDED.sumber, model = EXCLUDED.model,
-       bahasa = EXCLUDED.bahasa, dibuat_pada = now()`,
-      [a.id, p.narasi, p.sumber, p.model, bhs],
-    );
-    res.json({ penjelasan: p });
+    res.json({ asesmen: await ambilAsesmen(db, Number(req.params.id), req.pengguna.id, bahasa(req)) });
   }),
 );

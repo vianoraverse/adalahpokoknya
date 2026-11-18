@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { config } from '../config.js';
+import { config } from '../backend/config.js';
 import {
   ATURAN,
   BUTIR,

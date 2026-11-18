@@ -85,14 +85,6 @@ CREATE TABLE IF NOT EXISTS aturan_rekomendasi (
   teks TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS penjelasan_ai (
-  asesmen_id INT PRIMARY KEY REFERENCES asesmen(id) ON DELETE CASCADE,
-  narasi TEXT NOT NULL,
-  sumber TEXT NOT NULL,
-  model TEXT,
-  dibuat_pada TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
 CREATE TABLE IF NOT EXISTS pengaturan (
   kunci TEXT PRIMARY KEY,
   nilai DOUBLE PRECISION NOT NULL,
@@ -103,4 +95,6 @@ CREATE TABLE IF NOT EXISTS pengaturan (
 ALTER TABLE karier ADD COLUMN IF NOT EXISTS deskripsi_en TEXT;
 ALTER TABLE butir ADD COLUMN IF NOT EXISTS teks_en TEXT;
 ALTER TABLE indikator ADD COLUMN IF NOT EXISTS saran_en TEXT;
-ALTER TABLE penjelasan_ai ADD COLUMN IF NOT EXISTS bahasa TEXT NOT NULL DEFAULT 'id';
+
+-- Dulu dipakai untuk menyimpan penjelasan AI; fitur itu sudah dihapus.
+DROP TABLE IF EXISTS penjelasan_ai;
