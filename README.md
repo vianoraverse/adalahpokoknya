@@ -5,13 +5,6 @@ Mahasiswa memilih satu dari 16 karier TIK, mengisi 36 butir kuesioner Likert, la
 soft skill intrapersonal (X1) dan interpersonal (X2), *Soft Skill Fit Score* (SFS), serta rekomendasi
 pengembangan yang ditentukan aturan (*rule-based*).
 
-Proyek Rekayasa Perangkat Lunak, Kelompok 4, Program Studi Teknik Informatika, FST UIN Syarif Hidayatullah
-Jakarta (2026). Dasar proyek ini adalah laporan pada [`docs/LAPORAN_BAB_1-3.md`](docs/LAPORAN_BAB_1-3.md)
-([PDF](docs/LAPORAN_BAB_1-3.pdf)).
-
-Seluruh kode ditulis dengan **HTML, CSS, dan JavaScript biasa**. Tidak ada TypeScript, tidak ada framework
-frontend, dan tidak ada proses *build*: berkas di `public/` adalah berkas yang dibuka peramban.
-
 ## Menjalankan
 
 Butuh Node.js 20.12 atau lebih baru. Tidak perlu memasang basis data untuk mencoba.
