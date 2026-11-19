@@ -49,7 +49,7 @@ const KAMUS = {
     'depan.c2p': 'Pilih karier yang kamu minati, lalu jawab pertanyaannya.',
     'depan.c3': 'Lihat hasil',
     'depan.c3p': 'Karier yang paling cocok dan soft skill yang perlu dilatih.',
-    'depan.kaki': 'YourWay · Proyek Rekayasa Perangkat Lunak, Kelompok 4',
+    'depan.kaki': 'Lihat Masadepanmu',
 
     // Masuk dan daftar
     'auth.slogan': 'Setelah lulus, mau ke mana?',
@@ -206,7 +206,7 @@ const KAMUS = {
     'depan.c2p': 'Pick the career you are interested in, then answer the questions.',
     'depan.c3': 'See your result',
     'depan.c3p': 'Your best-fit career and the soft skills to work on.',
-    'depan.kaki': 'YourWay · Software Engineering Project, Group 4',
+    'depan.kaki': 'See Your Future',
 
     'auth.slogan': 'After graduation, where to?',
     'auth.proyek': 'Software Engineering course project, Group 4.',
