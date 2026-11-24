@@ -19,20 +19,6 @@ asesmenRouter.get(
     res.json({ karier: rows });
   }),
 );
-asesmenRouter.get(
-  '/careers/:id/profile',
-  wajibLogin(),
-  h(async (req, res) => {
-    const db = await getDb();
-    const { rows } = await db.query(
-      `SELECT i.id AS indikator_id, i.kode, i.nama, i.variabel, p.req, p.bobot
-     FROM profil_karier p JOIN indikator i ON i.id = p.indikator_id
-     WHERE p.karier_id = $1 ORDER BY i.urutan`,
-      [Number(req.params.id)],
-    );
-    res.json({ profil: rows });
-  }),
-);
 // Instrumen kuesioner aktif (FR-03).
 asesmenRouter.get(
   '/instrument',
@@ -46,45 +32,62 @@ asesmenRouter.get(
     res.json({ butir: rows });
   }),
 );
-/** Data untuk kalimat "Ringkasnya" (tanpa identitas mahasiswa, hanya nama karier dan soft skill). */
-function ringkasan(a, bhs) {
-  const hs = a.hasil;
-  // Hasil lama (sebelum ada prioritasHasil) hanya punya prioritas untuk karier pilihan. Kalau karier hasilnya
-  // berbeda, datanya tidak ada (null) dan ringkasan meminta mahasiswa mengulang tes.
-  const sama = hs.karierTeratas.karierId === a.karier.id;
-  const kembangkan = hs.prioritasHasil ?? (sama ? hs.prioritas : null);
-  return susunRingkasan({
-    karierHasil: hs.karierTeratas.nama,
-    karierPilihan: a.karier.nama,
-    samaDenganPilihan: sama,
-    kembangkan: kembangkan?.map((p) => ({ nama: p.nama })) ?? null,
-    bahasa: bhs,
-  });
+/** Teks aturan rekomendasi dan templat penjelasan terbaru (yang diatur admin), sesuai bahasa. */
+async function muatTeks(q) {
+  const [aturan, templat] = await Promise.all([
+    q.query('SELECT kode, jenis, teks, teks_en FROM aturan_rekomendasi'),
+    q.query('SELECT kode, teks, teks_en FROM templat_penjelasan'),
+  ]);
+  return {
+    aturan: Object.fromEntries(aturan.rows.map((r) => [r.kode, r])),
+    templat: Object.fromEntries(templat.rows.map((r) => [r.kode, r])),
+  };
 }
+
 async function ambilAsesmen(q, id, penggunaId, bhs = 'id') {
   const { rows } = await q.query(
-    `SELECT a.id, a.jenis, a.dibuat_pada, k.id AS karier_id, k.nama AS karier_nama, k.area_fungsi,
+    `SELECT a.id, a.jenis, a.dibuat_pada, k.id AS karier_id, k.kode AS karier_kode, k.nama AS karier_nama, k.area_fungsi,
             h.detail
      FROM asesmen a
      JOIN karier k ON k.id = a.karier_id
-     JOIN hasil_skor h ON h.asesmen_id = a.id
+     JOIN hasil_asesmen h ON h.asesmen_id = a.id
      WHERE a.id = $1 AND a.pengguna_id = $2`,
     [id, penggunaId],
   );
   const r = rows[0];
   // Hasil hanya dapat diakses pemilik akun (NFR-Privacy): asesmen milik orang lain dianggap tidak ada.
   if (!r) throw new HttpError(404, 'Hasil asesmen tidak ditemukan.');
-  const a = {
+  const hasil = r.detail;
+  const { aturan, templat } = await muatTeks(q);
+  const teksAturan = (kode) => {
+    const x = aturan[kode];
+    return x ? { kode, teks: (bhs === 'en' && x.teks_en) || x.teks } : null;
+  };
+  // Nilai angka tidak dikirim ke mahasiswa: yang dikirim hanya kategori, prioritas, dan teks.
+  // Nilai per indikator tetap dikirim untuk spider chart (digambar tanpa angka).
+  return {
     id: r.id,
     jenis: r.jenis,
     dibuatPada: r.dibuat_pada,
-    karier: { id: r.karier_id, nama: r.karier_nama, areaFungsi: r.area_fungsi },
-    hasil: r.detail,
+    karier: { id: r.karier_id, kode: r.karier_kode, nama: r.karier_nama, areaFungsi: r.area_fungsi },
+    kategori: hasil.kategori,
+    prioritas: hasil.prioritas.map((p) => ({
+      kode: p.kode,
+      nama: p.nama,
+      saran: (bhs === 'en' && p.saranEn) || p.saran,
+    })),
+    softSkill: hasil.nilaiIndikator
+      .filter((i) => i.variabel !== 'Y')
+      .map((i) => ({ kode: i.kode, nama: i.nama, variabel: i.variabel, nilai: i.nilai })),
+    ambang: { rendah: hasil.ambang.ambang_rendah, tinggi: hasil.ambang.ambang_tinggi },
+    rekomendasi: {
+      utama: teksAturan(hasil.aturan),
+      tambahan: hasil.aturanTambahan.map(teksAturan).filter(Boolean),
+    },
+    ringkasan: susunRingkasan({ templat, hasil, karier: r.karier_nama, bahasa: bhs }),
   };
-  a.ringkasan = ringkasan(a, bhs);
-  return a;
 }
-// Kirim jawaban → hitung skor (UC-11) → simpan hasil (FR-04 s.d. FR-06).
+// Kirim jawaban → hitung nilai dan kategori (UC-10) → simpan hasil (FR-04 dan FR-05).
 asesmenRouter.post(
   '/assessments',
   wajibLogin('mahasiswa'),
@@ -107,11 +110,9 @@ asesmenRouter.get(
   h(async (req, res) => {
     const db = await getDb();
     const { rows } = await db.query(
-      `SELECT a.id, a.jenis, a.dibuat_pada AS "dibuatPada", k.nama AS karier, kh.nama AS "karierHasil", kh.kode AS "kodeHasil",
-            h.skor_y AS y, h.skor_x1 AS x1, h.skor_x2 AS x2, h.sfs_pilihan AS sfs,
-            h.aturan_kode AS aturan, h.status_kesesuaian AS status
-     FROM asesmen a JOIN karier k ON k.id = a.karier_id JOIN hasil_skor h ON h.asesmen_id = a.id
-     JOIN karier kh ON kh.id = h.karier_teratas_id
+      `SELECT a.id, a.jenis, a.dibuat_pada AS "dibuatPada", k.nama AS karier, k.kode AS "kodeKarier",
+            h.kategori_y AS "kategoriY", h.kategori_x AS "kategoriX"
+     FROM asesmen a JOIN karier k ON k.id = a.karier_id JOIN hasil_asesmen h ON h.asesmen_id = a.id
      WHERE a.pengguna_id = $1 ORDER BY a.dibuat_pada DESC, a.id DESC`,
       [req.pengguna.id],
     );

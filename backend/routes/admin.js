@@ -16,7 +16,7 @@ adminRouter.get(
     const [butir, indikator] = await Promise.all([
       db.query(`SELECT b.id, b.teks, b.teks_en, b.dasar, b.aktif, b.urutan, i.id AS indikator_id, i.nama AS indikator, i.variabel
        FROM butir b JOIN indikator i ON i.id = b.indikator_id ORDER BY i.urutan, b.urutan, b.id`),
-      db.query('SELECT id, kode, nama, variabel, bobot, dasar, saran FROM indikator ORDER BY urutan'),
+      db.query('SELECT id, kode, nama, variabel, dasar, saran FROM indikator ORDER BY urutan'),
     ]);
     res.json({ butir: butir.rows, indikator: indikator.rows });
   }),
@@ -87,18 +87,21 @@ adminRouter.delete(
     res.json({ ok: true, dinonaktifkan: false });
   }),
 );
-/* ---------- Model penilaian: bobot indikator, ambang, aturan (UC-07) ---------- */
+/* ---------- Model penilaian: ambang, aturan tabel keputusan, templat penjelasan (UC-06, UC-07) ---------- */
 adminRouter.get(
   '/model',
   h(async (_req, res) => {
     const db = await getDb();
-    const [indikator, pengaturan, aturan] = await Promise.all([
-      db.query('SELECT id, kode, nama, variabel, bobot, saran, saran_en FROM indikator ORDER BY urutan'),
+    const [indikator, pengaturan, aturan, templat] = await Promise.all([
+      db.query('SELECT id, kode, nama, variabel, saran, saran_en FROM indikator ORDER BY urutan'),
       db.query(`SELECT kunci, nilai, keterangan FROM pengaturan
-              ORDER BY array_position(ARRAY['ambang_rendah','ambang_tinggi','ambang_aturan_y','ambang_aturan_sfs','selisih_alternatif','jumlah_prioritas']::text[], kunci)`),
-      db.query('SELECT kode, kondisi, interpretasi, jenis, teks FROM aturan_rekomendasi ORDER BY kode'),
+              ORDER BY array_position(ARRAY['ambang_rendah','ambang_tinggi','jumlah_prioritas']::text[], kunci)`),
+      db.query(`SELECT kode, kondisi, interpretasi, jenis, teks, teks_en FROM aturan_rekomendasi
+              ORDER BY array_position(ARRAY['R1','R2','R3','R4','X1_RENDAH','X2_RENDAH']::text[], kode)`),
+      db.query(`SELECT kode, teks, teks_en FROM templat_penjelasan
+              ORDER BY array_position(ARRAY['R1','R2','R3','R4','X1_RENDAH','X2_RENDAH']::text[], kode)`),
     ]);
-    res.json({ indikator: indikator.rows, pengaturan: pengaturan.rows, aturan: aturan.rows });
+    res.json({ indikator: indikator.rows, pengaturan: pengaturan.rows, aturan: aturan.rows, templat: templat.rows });
   }),
 );
 adminRouter.put(
@@ -106,17 +109,12 @@ adminRouter.put(
   h(async (req, res) => {
     const d = z
       .object({
-        bobot: z
-          .number({ invalid_type_error: 'Bobot harus berupa angka.' })
-          .positive('Bobot harus lebih dari 0.')
-          .max(100),
         saran: z.string().trim().max(500).default(''),
         saranEn: z.string().trim().max(500).default(''),
       })
       .parse(req.body);
     const db = await getDb();
-    await db.query('UPDATE indikator SET bobot = $1, saran = $2, saran_en = $3 WHERE id = $4', [
-      d.bobot,
+    await db.query('UPDATE indikator SET saran = $1, saran_en = $2 WHERE id = $3', [
       d.saran,
       d.saranEn || null,
       Number(req.params.id),
@@ -137,7 +135,10 @@ adminRouter.put(
       )
       .parse(req.body);
     if (d.ambang_rendah !== undefined && d.ambang_tinggi !== undefined && d.ambang_rendah >= d.ambang_tinggi) {
-      throw new HttpError(400, 'Ambang rendah harus lebih kecil dari ambang tinggi.');
+      throw new HttpError(400, 'Batas "Perlu Dikembangkan" harus lebih kecil dari batas "Sangat Cocok".');
+    }
+    if (d.jumlah_prioritas !== undefined && (d.jumlah_prioritas < 1 || d.jumlah_prioritas > 14)) {
+      throw new HttpError(400, 'Jumlah indikator prioritas harus antara 1 dan 14.');
     }
     const db = await getDb();
     for (const [k, v] of Object.entries(d)) await db.query('UPDATE pengaturan SET nilai = $1 WHERE kunci = $2', [v, k]);
@@ -152,65 +153,33 @@ adminRouter.put(
         interpretasi: teks('Interpretasi', 200),
         jenis: teks('Jenis rekomendasi', 200),
         teks: teks('Teks rekomendasi', 800),
+        teksEn: z.string().trim().max(800).default(''),
       })
       .parse(req.body);
     const db = await getDb();
-    await db.query('UPDATE aturan_rekomendasi SET interpretasi = $1, jenis = $2, teks = $3 WHERE kode = $4', [
-      d.interpretasi,
-      d.jenis,
-      d.teks,
-      req.params.kode,
-    ]);
+    await db.query(
+      'UPDATE aturan_rekomendasi SET interpretasi = $1, jenis = $2, teks = $3, teks_en = $4 WHERE kode = $5',
+      [d.interpretasi, d.jenis, d.teks, d.teksEn || null, req.params.kode],
+    );
     res.json({ ok: true });
   }),
 );
-/* ---------- Profil kebutuhan soft skill per karier (UC-08) ---------- */
-adminRouter.get(
-  '/profiles/:karierId',
-  h(async (req, res) => {
-    const db = await getDb();
-    const { rows } = await db.query(
-      `SELECT i.id AS indikator_id, i.nama, i.variabel, p.req, p.bobot
-     FROM indikator i LEFT JOIN profil_karier p ON p.indikator_id = i.id AND p.karier_id = $1
-     WHERE i.variabel <> 'Y' ORDER BY i.urutan`,
-      [Number(req.params.karierId)],
-    );
-    res.json({ profil: rows });
-  }),
-);
 adminRouter.put(
-  '/profiles/:karierId',
+  '/templates/:kode',
   h(async (req, res) => {
     const d = z
       .object({
-        baris: z
-          .array(
-            z.object({
-              indikatorId: z.number().int(),
-              req: z
-                .number({ invalid_type_error: 'Level kebutuhan harus berupa angka.' })
-                .min(0, 'Level kebutuhan minimal 0.')
-                .max(100, 'Level kebutuhan maksimal 100.'),
-              bobot: z.number({ invalid_type_error: 'Bobot harus berupa angka.' }).min(0, 'Bobot tidak boleh negatif.'),
-            }),
-          )
-          .min(1),
+        teks: teks('Templat penjelasan', 1000),
+        teksEn: z.string().trim().max(1000).default(''),
       })
       .parse(req.body);
-    const total = d.baris.reduce((a, b) => a + b.bobot, 0);
-    if (total <= 0) throw new HttpError(400, 'Jumlah bobot harus lebih dari 0.');
-    const karierId = Number(req.params.karierId);
     const db = await getDb();
-    await db.tx(async (q) => {
-      for (const b of d.baris) {
-        // Bobot dinormalkan agar Σ w(r, i) = 1.
-        await q.query(
-          `INSERT INTO profil_karier (karier_id, indikator_id, req, bobot) VALUES ($1,$2,$3,$4)
-         ON CONFLICT (karier_id, indikator_id) DO UPDATE SET req = EXCLUDED.req, bobot = EXCLUDED.bobot`,
-          [karierId, b.indikatorId, b.req, b.bobot / total],
-        );
-      }
-    });
+    const { rowCount } = await db.query('UPDATE templat_penjelasan SET teks = $1, teks_en = $2 WHERE kode = $3', [
+      d.teks,
+      d.teksEn || null,
+      req.params.kode,
+    ]);
+    if (rowCount === 0) throw new HttpError(404, 'Templat tidak ditemukan.');
     res.json({ ok: true });
   }),
 );
@@ -290,43 +259,64 @@ adminRouter.delete(
     res.json({ ok: true });
   }),
 );
-/* ---------- Pemantauan hasil agregat dan anonim (UC-10) ---------- */
+/* ---------- Pemantauan hasil agregat dan anonim (UC-09) ---------- */
 adminRouter.get(
   '/aggregate',
   h(async (_req, res) => {
     const db = await getDb();
     // Hanya asesmen terbaru tiap mahasiswa yang dihitung, tanpa identitas.
-    const terbaru = `SELECT DISTINCT ON (a.pengguna_id) a.id, a.karier_id FROM asesmen a ORDER BY a.pengguna_id, a.dibuat_pada DESC, a.id DESC`;
-    const [ringkas, aturan, karier, detail, akun] = await Promise.all([
-      db.query(`SELECT COUNT(*)::int AS responden, AVG(h.skor_y) AS y, AVG(h.skor_x1) AS x1, AVG(h.skor_x2) AS x2, AVG(h.sfs_pilihan) AS sfs,
-                     SUM(CASE WHEN h.status_kesesuaian = 'Selaras' THEN 1 ELSE 0 END)::int AS selaras
-              FROM (${terbaru}) t JOIN hasil_skor h ON h.asesmen_id = t.id`),
-      db.query(
-        `SELECT h.aturan_kode AS kode, COUNT(*)::int AS n FROM (${terbaru}) t JOIN hasil_skor h ON h.asesmen_id = t.id GROUP BY h.aturan_kode ORDER BY h.aturan_kode`,
-      ),
-      db.query(`SELECT k.nama, COUNT(t.id)::int AS n, AVG(h.sfs_pilihan) AS sfs, AVG(h.skor_y) AS y
-              FROM karier k LEFT JOIN (${terbaru}) t ON t.karier_id = k.id LEFT JOIN hasil_skor h ON h.asesmen_id = t.id
-              GROUP BY k.id, k.nama, k.urutan ORDER BY n DESC, k.urutan`),
-      db.query(`SELECT h.detail FROM (${terbaru}) t JOIN hasil_skor h ON h.asesmen_id = t.id`),
-      db.query(
-        `SELECT (SELECT COUNT(*)::int FROM pengguna WHERE peran = 'mahasiswa') AS mahasiswa, (SELECT COUNT(*)::int FROM asesmen) AS asesmen`,
-      ),
+    const terbaru = `SELECT DISTINCT ON (a.pengguna_id) a.id, a.karier_id FROM asesmen a
+                     JOIN hasil_asesmen h ON h.asesmen_id = a.id
+                     ORDER BY a.pengguna_id, a.dibuat_pada DESC, a.id DESC`;
+    const sebaran = (kolom) =>
+      db.query(`SELECT h.${kolom} AS kategori, COUNT(*)::int AS n FROM (${terbaru}) t
+                JOIN hasil_asesmen h ON h.asesmen_id = t.id GROUP BY h.${kolom}`);
+    const [ringkas, y, x1, x2, x, aturan, karier, detail, akun] = await Promise.all([
+      db.query(`SELECT COUNT(*)::int AS responden, AVG(h.nilai_y) AS y, AVG(h.nilai_x1) AS x1,
+                       AVG(h.nilai_x2) AS x2, AVG(h.nilai_x) AS x
+                FROM (${terbaru}) t JOIN hasil_asesmen h ON h.asesmen_id = t.id`),
+      sebaran('kategori_y'),
+      sebaran('kategori_x1'),
+      sebaran('kategori_x2'),
+      sebaran('kategori_x'),
+      db.query(`SELECT h.aturan_kode AS kode, COUNT(*)::int AS n FROM (${terbaru}) t
+                JOIN hasil_asesmen h ON h.asesmen_id = t.id GROUP BY h.aturan_kode`),
+      db.query(`SELECT k.nama, COUNT(t.id)::int AS n, AVG(h.nilai_y) AS y
+                FROM karier k LEFT JOIN (${terbaru}) t ON t.karier_id = k.id
+                LEFT JOIN hasil_asesmen h ON h.asesmen_id = t.id
+                GROUP BY k.id, k.nama, k.urutan ORDER BY n DESC, k.urutan`),
+      db.query(`SELECT h.detail FROM (${terbaru}) t JOIN hasil_asesmen h ON h.asesmen_id = t.id`),
+      db.query(`SELECT (SELECT COUNT(*)::int FROM pengguna WHERE peran = 'mahasiswa') AS mahasiswa,
+                       (SELECT COUNT(*)::int FROM asesmen) AS asesmen`),
     ]);
-    const jumlah = new Map();
-    for (const r of detail.rows) {
-      for (const s of r.detail.skorIndikator ?? []) {
-        const c = jumlah.get(s.kode) ?? { nama: s.nama, variabel: s.variabel, total: 0, n: 0 };
-        c.total += s.skor;
+    const keObjek = (r) => Object.fromEntries(r.rows.map((x) => [x.kategori, x.n]));
+    // Rata-rata tiap indikator soft skill dan berapa kali indikator itu jadi prioritas.
+    const indikator = new Map();
+    for (const { detail: d } of detail.rows) {
+      for (const s of d.nilaiIndikator ?? []) {
+        if (s.variabel === 'Y') continue;
+        const c = indikator.get(s.kode) ?? { nama: s.nama, variabel: s.variabel, total: 0, n: 0, prioritas: 0 };
+        c.total += s.nilai;
         c.n += 1;
-        jumlah.set(s.kode, c);
+        indikator.set(s.kode, c);
+      }
+      for (const p of d.prioritas ?? []) {
+        const c = indikator.get(p.kode);
+        if (c) c.prioritas += 1;
       }
     }
     res.json({
       ...akun.rows[0],
       ...ringkas.rows[0],
+      kategori: { Y: keObjek(y), X1: keObjek(x1), X2: keObjek(x2), X: keObjek(x) },
       aturan: aturan.rows,
       karier: karier.rows,
-      indikator: [...jumlah.values()].map((c) => ({ nama: c.nama, variabel: c.variabel, rata: c.total / c.n })),
+      indikator: [...indikator.values()].map((c) => ({
+        nama: c.nama,
+        variabel: c.variabel,
+        rata: c.total / c.n,
+        prioritas: c.prioritas,
+      })),
     });
   }),
 );

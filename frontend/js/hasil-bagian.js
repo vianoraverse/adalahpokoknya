@@ -1,71 +1,59 @@
 // Potongan tampilan hasil tes yang dipakai di Dasbor dan halaman Hasil.
-// Yang ditampilkan ke mahasiswa sengaja dibuat sederhana: tanpa angka dan tanpa istilah teknis.
-import { bhs, catatanSementara, html, ikon, t, tHtml } from './umum.js';
+// Yang ditampilkan ke mahasiswa sengaja tanpa angka: hanya kategori (Sangat Cocok, Cukup Cocok,
+// Perlu Dikembangkan), soft skill prioritas, rekomendasi, dan penjelasan.
+import { html, ikon, t } from './umum.js';
 import { IKON_KARIER, IKON_SOFT_SKILL } from './ikon.js';
 
-/** Label kecocokan dari skor kesesuaian (SFS) karier hasil, memakai ambang yang diatur admin. */
-export function labelCocok(h) {
-  const sfs = h.karierTeratas.sfs;
-  if (sfs >= h.ambang.ambang_tinggi) return t('hasil.label.tinggi');
-  if (sfs >= h.ambang.ambang_rendah) return t('hasil.label.sedang');
-  return t('hasil.label.rendah');
-}
+/** Urutan kategori dari rendah ke tinggi; dipakai untuk mengisi meteran tiga kotak. */
+const TINGKAT = { perlu: 1, cukup: 2, sangat: 3 };
 
-/**
- * Data yang ditampilkan. Hasil tes yang disimpan sebelum perubahan tampilan ini belum punya
- * `prioritasHasil`, `kekuatan`, dan `alternatif`, jadi dihitung ulang dari data yang ada.
- */
-export function dataTampil(a) {
-  const h = a.hasil;
-  const samaDenganPilihan = h.karierTeratas.karierId === a.karier.id;
-  return {
-    karierHasil: h.karierTeratas,
-    samaDenganPilihan,
-    label: labelCocok(h),
-    // null = tidak diketahui (hasil lama yang karier hasilnya beda dari pilihan); mahasiswa diminta ulang tes.
-    kembangkan: h.prioritasHasil ?? (samaDenganPilihan ? h.prioritas : null),
-    // Data spider chart. Hasil lama hanya punya data untuk karier pilihan, jadi chart hanya tampil kalau sama.
-    radar: h.gapHasil ?? (samaDenganPilihan ? h.gapPilihan : null),
-    kekuatan:
-      h.kekuatan ?? [...h.skorIndikator].filter((s) => s.variabel !== 'Y').sort((x, y) => y.skor - x.skor).slice(0, 3),
-    alternatif:
-      h.alternatif ??
-      [...h.sfsSemua].filter((s) => s.karierId !== h.karierTeratas.karierId).sort((x, y) => y.sfs - x.sfs).slice(0, 3),
-  };
-}
+export const labelKategori = (k) => t(`kategori.${k}`);
 
-/** Kotak paling atas: satu karier hasil akhir. `semuaKarier` = daftar dari /api/careers (untuk ikon dan deskripsi). */
-export function kotakHasil(a, semuaKarier = []) {
-  const d = dataTampil(a);
-  const k = semuaKarier.find((x) => x.id === d.karierHasil.karierId);
-  return html`<section class="hasil-papan gelap" aria-label="Hasil utama">
-    <div class="hasil-papan__ikon">${ikon(IKON_KARIER[k?.kode])}</div>
+/** Label kategori dengan meteran tiga kotak di depannya (meteran hanya hiasan; artinya ada di teks). */
+export const capKategori = (k) => html`<span class="kategori kategori--${k}">
+  <span class="kategori__meter" aria-hidden="true">${[1, 2, 3].map((i) => html`<i class="${i <= TINGKAT[k] ? 'isi' : ''}"></i>`)}</span>
+  ${labelKategori(k)}
+</span>`;
+
+/** Kotak paling atas: karier yang dipilih mahasiswa. `semuaKarier` = daftar dari /api/careers. */
+export function kotakKarier(a, semuaKarier = []) {
+  const k = semuaKarier.find((x) => x.id === a.karier.id);
+  return html`<section class="hasil-papan gelap" aria-label="${t('hasil.karierPilihan')}">
+    <div class="hasil-papan__ikon">${ikon(IKON_KARIER[a.karier.kode])}</div>
     <div class="hasil-papan__isi">
-      <p class="hasil-papan__label">${t('hasil.palingCocok')}</p>
-      <p class="hasil-papan__tujuan">${d.karierHasil.nama}</p>
-      <p class="hasil-papan__cap"><span class="cap cap--isi">${d.label}</span></p>
+      <p class="hasil-papan__label">${t('hasil.karierPilihan')}</p>
+      <p class="hasil-papan__tujuan">${a.karier.nama}</p>
       ${k?.deskripsi ? html`<p class="hasil-papan__desk">${k.deskripsi}</p>` : ''}
-      <p class="hasil-papan__desk">${
-        d.samaDenganPilihan ? t('hasil.sama') : tHtml('hasil.beda', { pilihan: a.karier.nama })
-      }</p>
     </div>
-    ${catatanSementara()}
   </section>`;
+}
+
+/** Empat kategori kecocokan: Y, X, X1, X2 (FR-06), masing-masing dengan penjelasan singkat. */
+export function daftarKategori(a) {
+  return html`<ul class="daftar-kategori">
+    ${['Y', 'X', 'X1', 'X2'].map((v) => html`<li>
+      <div>
+        <h3>${t(`variabel.${v}`)}</h3>
+        <p>${t(`variabel.${v}.p`)}</p>
+      </div>
+      ${capKategori(a.kategori[v])}
+    </li>`)}
+  </ul>`;
 }
 
 /** Ikon soft skill di dalam lingkaran kuning. */
 export const ikonSoftSkill = (kode) => html`<span class="ikon-bulat">${ikon(IKON_SOFT_SKILL[kode])}</span>`;
 
-/** Saran sesuai bahasa. Hasil lama belum punya saranEn, jadi memakai saran bahasa Indonesia. */
-const saran = (p) => (bhs() === 'en' && p.saranEn ? p.saranEn : p.saran);
-
-/** Daftar soft skill yang bisa dilatih, masing-masing dengan satu saran. */
-export function daftarLatih(d) {
-  if (d.kembangkan === null) return html`<p>${t('hasil.latihUlang')}</p>`;
-  if (d.kembangkan.length === 0) {
-    return html`<p>${t('hasil.latihSudah', { karier: d.karierHasil.nama })}</p>`;
-  }
-  return html`<ul class="daftar-latih">
-    ${d.kembangkan.map((p) => html`<li>${ikonSoftSkill(p.kode)}<div><h3>${p.nama}</h3><p>${saran(p)}</p></div></li>`)}
+/** Tiga soft skill prioritas (nilai terendah), masing-masing dengan satu saran. `baris` = tiga kolom di layar lebar. */
+export function daftarLatih(prioritas, baris = false) {
+  return html`<ul class="daftar-latih ${baris ? 'daftar-latih--baris' : ''}">
+    ${prioritas.map((p) => html`<li>${ikonSoftSkill(p.kode)}<div><h3>${p.nama}</h3><p>${p.saran}</p></div></li>`)}
   </ul>`;
+}
+
+/** Rekomendasi dari aturan tabel keputusan yang terpicu, ditambah aturan tambahan bila ada. */
+export function teksRekomendasi(a) {
+  const { utama, tambahan } = a.rekomendasi;
+  return html`${utama ? html`<p class="rekomendasi__utama">${utama.teks}</p>` : ''}
+    ${tambahan.length ? html`<ul class="rekomendasi__tambahan">${tambahan.map((r) => html`<li>${r.teks}</li>`)}</ul>` : ''}`;
 }

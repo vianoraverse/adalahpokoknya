@@ -1,7 +1,6 @@
 // Halaman hasil tes.
-import { $, api, catatanSementara, html, ikon, mulaiHalaman, pasang, t, tanggal } from '../umum.js';
-import { IKON_KARIER } from '../ikon.js';
-import { daftarLatih, dataTampil, ikonSoftSkill, kotakHasil } from '../hasil-bagian.js';
+import { $, api, html, mulaiHalaman, pasang, t, tanggal } from '../umum.js';
+import { daftarKategori, daftarLatih, kotakKarier, teksRekomendasi } from '../hasil-bagian.js';
 import { gambarRadar } from '../grafik.js';
 
 await mulaiHalaman('mahasiswa');
@@ -10,8 +9,6 @@ const id = Number(new URLSearchParams(location.search).get('id'));
 
 try {
   const [{ asesmen: a }, { karier }] = await Promise.all([api(`/assessments/${id}`), api('/careers')]);
-  const cari = (karierId) => karier.find((k) => k.id === karierId) ?? {};
-  const d = dataTampil(a);
 
   pasang(utama, html`<div class="halaman halaman--sedang">
     <header class="halaman__kepala halaman__kepala--baris">
@@ -22,49 +19,38 @@ try {
       <a class="tombol" href="/app/asesmen">${t('hasil.ulangi')}</a>
     </header>
 
-    ${kotakHasil(a, karier)}
+    ${kotakKarier(a, karier)}
 
-    <div class="dua-kolom">
-      <section class="panel" aria-labelledby="judul-kekuatan">
-        <h2 id="judul-kekuatan">${t('hasil.kekuatan')}</h2>
-        <ul class="daftar-kekuatan">${d.kekuatan.map((k) => html`<li>${ikonSoftSkill(k.kode)} ${k.nama}</li>`)}</ul>
-      </section>
-      <section class="panel" aria-labelledby="judul-latih">
-        <h2 id="judul-latih">${t('hasil.latih')}</h2>
-        ${daftarLatih(d)}
-        ${catatanSementara()}
-      </section>
-    </div>
-
-    ${d.radar
-      ? html`<section class="panel" aria-labelledby="judul-radar">
-          <h2 id="judul-radar">${t('hasil.radarJudul', { karier: d.karierHasil.nama })}</h2>
-          <p class="panel__sub">${t('hasil.radarP')}</p>
-          <figure class="radar" id="radar"></figure>
-          ${catatanSementara()}
-        </section>`
-      : ''}
-
-    <section class="panel" aria-labelledby="judul-alternatif">
-      <h2 id="judul-alternatif">${t('hasil.alternatif')}</h2>
-      <ul class="alternatif">
-        ${d.alternatif.map((k) => html`<li>
-          <span class="alternatif__ikon">${ikon(IKON_KARIER[cari(k.karierId).kode])}</span>
-          <h3>${k.nama}</h3>
-          <p>${cari(k.karierId).deskripsi ?? ''}</p>
-        </li>`)}
-      </ul>
-      ${catatanSementara()}
+    <section class="panel" aria-labelledby="judul-kategori">
+      <h2 id="judul-kategori">${t('hasil.kategoriJudul')}</h2>
+      ${daftarKategori(a)}
     </section>
 
     <section class="panel penjelasan" aria-labelledby="judul-penjelasan">
       <h2 id="judul-penjelasan">${t('hasil.ringkas')}</h2>
       ${a.ringkasan.split(/\n{2,}/).map((par) => html`<p>${par}</p>`)}
-      ${catatanSementara()}
     </section>
+
+    <section class="panel rekomendasi" aria-labelledby="judul-rekomendasi">
+      <h2 id="judul-rekomendasi">${t('hasil.rekomendasi')}</h2>
+      ${teksRekomendasi(a)}
+    </section>
+
+    <section class="panel" aria-labelledby="judul-latih">
+      <h2 id="judul-latih">${t('hasil.latih')}</h2>
+      ${daftarLatih(a.prioritas, true)}
+    </section>
+
+    <section class="panel" aria-labelledby="judul-radar">
+      <h2 id="judul-radar">${t('hasil.radarJudul')}</h2>
+      <p class="panel__sub">${t('hasil.radarP')}</p>
+      <figure class="radar" id="radar"></figure>
+    </section>
+
+    <p class="catatan-hasil">${t('hasil.catatan')}</p>
   </div>`);
 
-  if (d.radar) gambarRadar($('#radar'), d.radar, d.karierHasil.nama, (d.kembangkan ?? []).map((k) => k.kode));
+  gambarRadar($('#radar'), a.softSkill, a.ambang, a.prioritas.map((p) => p.kode));
 } catch (e) {
   pasang(utama, html`<div class="halaman">
     <p class="galat" role="alert">${e.message}</p>

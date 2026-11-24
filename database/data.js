@@ -350,95 +350,102 @@ export const BUTIR = [
   ],
 ];
 /**
- * Frekuensi kemunculan soft skill pada lowongan jenjang awal, dalam persen lowongan,
- * per karier (urutan kolom mengikuti 14 indikator X1 lalu X2 pada INDIKATOR).
- *
- * PENTING: angka ini adalah DATA AWAL ILUSTRATIF untuk menjalankan sistem. Laporan
- * (Subbab 3.4) menetapkan bahwa angka sebenarnya dihitung dari lowongan kerja 2026
- * yang dikumpulkan tim. Ganti lewat menu Admin > Profil karier setelah survei selesai.
+ * Tabel keputusan (Tabel 3.3) dan aturan tambahan (Subbab 3.5.3).
+ * [kode, kondisi, interpretasi, jenis rekomendasi, teks rekomendasi, teks rekomendasi (English)]
  */
-export const FREKUENSI = {
-  programmer: [55, 85, 40, 8, 65, 45, 50, 80, 45, 35, 5, 8, 12, 8],
-  'system-analyst': [85, 75, 35, 12, 40, 35, 40, 70, 80, 75, 35, 20, 15, 20],
-  'software-engineer': [65, 85, 45, 10, 70, 50, 55, 85, 50, 45, 8, 15, 15, 10],
-  dba: [60, 75, 15, 35, 45, 30, 70, 55, 40, 50, 5, 8, 8, 8],
-  'data-analyst': [85, 70, 40, 30, 55, 30, 50, 60, 75, 70, 10, 8, 12, 5],
-  'network-admin': [45, 80, 12, 20, 45, 45, 70, 60, 50, 45, 5, 8, 8, 10],
-  'network-engineer': [55, 85, 20, 15, 55, 50, 60, 65, 50, 45, 12, 10, 12, 8],
-  sysadmin: [50, 85, 15, 25, 50, 50, 70, 60, 45, 50, 5, 8, 8, 10],
-  'it-support': [35, 85, 12, 15, 40, 60, 65, 65, 85, 45, 12, 5, 15, 35],
-  'it-pm': [55, 70, 25, 20, 30, 60, 65, 85, 85, 70, 65, 85, 30, 62],
-  'it-governance': [75, 45, 10, 85, 35, 25, 65, 55, 65, 85, 35, 25, 15, 20],
-  cybersecurity: [85, 80, 35, 70, 70, 45, 65, 60, 45, 62, 5, 8, 10, 8],
-  'it-service-manager': [50, 70, 15, 30, 30, 55, 62, 80, 85, 62, 50, 75, 25, 62],
-  'enterprise-architect': [85, 70, 50, 30, 45, 45, 40, 70, 85, 75, 60, 62, 30, 25],
-  'web-mobile-dev': [45, 80, 65, 8, 70, 62, 50, 80, 45, 35, 8, 8, 15, 8],
-  multimedia: [35, 45, 90, 15, 55, 62, 62, 70, 62, 45, 30, 8, 20, 10],
-};
-/** Pita frekuensi pada Subbab 3.4: >=60% -> 80, 30-59% -> 65, 10-29% -> 50, <10% -> 35. */
-export function levelKebutuhan(persen) {
-  if (persen >= 60) return 80;
-  if (persen >= 30) return 65;
-  if (persen >= 10) return 50;
-  return 35;
-}
 export const ATURAN = [
   [
     'R1',
-    'Y ≥ ambang dan SFS ≥ ambang',
-    'Niat mantap dan selaras',
+    'Y ≥ 76 dan X ≥ 76',
+    'Y: Sangat Cocok; X: Sangat Cocok',
     'Pengayaan dan tantangan lanjutan',
-    'Niat dan soft skill kamu sudah sejalan dengan karier ini. Cari tantangan yang lebih tinggi: proyek nyata, magang, sertifikasi, atau kompetisi di bidang tersebut.',
+    'Niat dan soft skill kamu sudah kuat. Cari tantangan yang lebih tinggi, misalnya proyek nyata, magang, sertifikasi, atau kompetisi di bidang ini.',
+    'Your intention and soft skills are already strong. Look for bigger challenges, such as real projects, internships, certifications, or competitions in this field.',
   ],
   [
     'R2',
-    'Y ≥ ambang dan SFS < ambang',
-    'Niat kuat, soft skill perlu dikembangkan',
-    'Prioritas 3 indikator dengan selisih terbesar',
-    'Niat kamu sudah kuat. Fokuskan waktu pada tiga soft skill dengan selisih terbesar terhadap kebutuhan karier ini.',
+    'Y ≥ 76 dan X < 76',
+    'Y: Sangat Cocok; X: Cukup Cocok / Perlu Dikembangkan',
+    'Prioritas 3 indikator dengan nilai terendah',
+    'Niat kamu sudah kuat. Fokuskan latihan pada tiga soft skill dengan nilai terendah, yaitu yang ada di bagian "Yang perlu kamu latih".',
+    'Your intention is already strong. Focus your practice on the three soft skills with the lowest scores, listed under "What you should practice".',
   ],
   [
     'R3',
-    'Y < ambang dan SFS ≥ ambang',
-    'Potensi selaras, niat belum mantap',
+    'Y < 76 dan X ≥ 76',
+    'Y: Cukup Cocok / Perlu Dikembangkan; X: Sangat Cocok',
     'Eksplorasi karier dan informasi karier',
-    'Soft skill kamu sudah mendukung karier ini, tetapi niatnya belum mantap. Gali lebih jauh: baca deskripsi kerja, ngobrol dengan praktisi, atau coba proyek kecil di bidang ini.',
+    'Soft skill kamu sudah kuat, tetapi niatnya belum mantap. Gali informasi karier ini lebih jauh: baca deskripsi pekerjaannya, ngobrol dengan praktisi, atau coba proyek kecil di bidang ini.',
+    'Your soft skills are already strong, but your intention is not firm yet. Learn more about this career: read job descriptions, talk to people who work in it, or try a small project in this field.',
   ],
   [
     'R4',
-    'Y < ambang dan SFS < ambang',
-    'Perlu eksplorasi dan penguatan dasar',
-    'Karier alternatif dan pengembangan dasar',
-    'Niat dan kesesuaian soft skill masih perlu diperkuat. Jelajahi karier lain yang lebih selaras sambil membangun soft skill dasar.',
+    'Y < 76 dan X < 76',
+    'Y: Cukup Cocok / Perlu Dikembangkan; X: Cukup Cocok / Perlu Dikembangkan',
+    'Eksplorasi karier dan pengembangan soft skill dasar',
+    'Coba kenali beberapa karier TIK lain yang mungkin lebih sesuai, sambil membangun soft skill dasar, dimulai dari tiga soft skill di bagian "Yang perlu kamu latih".',
+    'Get to know a few other IT careers that might suit you better, while building basic soft skills, starting with the three under "What you should practice".',
   ],
   [
     'X1_RENDAH',
-    'X1 < ambang rendah',
-    'Soft skill intrapersonal rendah',
+    'X1 < 56',
+    'X1: Perlu Dikembangkan',
     'Pengembangan intrapersonal',
     'Perkuat pengelolaan diri, misalnya manajemen waktu, refleksi rutin, dan belajar mandiri.',
+    'Strengthen how you manage yourself, for example time management, regular reflection, and independent learning.',
   ],
   [
     'X2_RENDAH',
-    'X2 < ambang rendah',
-    'Soft skill interpersonal rendah',
+    'X2 < 56',
+    'X2: Perlu Dikembangkan',
     'Pengembangan interpersonal',
     'Perbanyak pengalaman bersama orang lain, misalnya kerja kelompok, organisasi, dan latihan presentasi.',
-  ],
-  [
-    'ALTERNATIF',
-    'SFS karier tertinggi − SFS karier pilihan ≥ selisih alternatif',
-    'Ada karier yang lebih selaras',
-    'Karier alternatif untuk dieksplorasi',
-    'Ada karier lain yang lebih selaras dengan profil soft skill kamu. Pertimbangkan untuk mengeksplorasinya.',
+    'Get more experience working with other people, for example group work, student organizations, and presentation practice.',
   ],
 ];
+
+/**
+ * Templat penjelasan per aturan (Subbab 2.7.5 dan 3.5.3). Isian yang tersedia:
+ * {karier} nama karier pilihan, {niat} kategori Y, {softskill} kategori X,
+ * {intrapersonal} kategori X1, {interpersonal} kategori X2, {prioritas} tiga indikator prioritas.
+ * [kode aturan, templat, templat (English)]
+ */
+export const TEMPLAT = [
+  [
+    'R1',
+    'Niat kariermu sebagai {karier} masuk kategori {niat}, dan soft skill kamu secara keseluruhan masuk kategori {softskill}. Kamu sudah siap mencari tantangan lanjutan. Soft skill yang masih bisa kamu tingkatkan: {prioritas}.',
+    'Your career intention for {karier} is in the {niat} category, and your overall soft skills are in the {softskill} category. You are ready to look for bigger challenges. Soft skills you can still improve: {prioritas}.',
+  ],
+  [
+    'R2',
+    'Niat kariermu sebagai {karier} masuk kategori {niat}, tetapi soft skill kamu secara keseluruhan masih di kategori {softskill}. Mulai dari melatih {prioritas}.',
+    'Your career intention for {karier} is in the {niat} category, but your overall soft skills are still in the {softskill} category. Start by practicing {prioritas}.',
+  ],
+  [
+    'R3',
+    'Soft skill kamu secara keseluruhan masuk kategori {softskill}, tetapi niat kariermu sebagai {karier} masih di kategori {niat}. Coba kenali karier ini lebih jauh sebelum memutuskan. Soft skill yang masih bisa kamu tingkatkan: {prioritas}.',
+    'Your overall soft skills are in the {softskill} category, but your career intention for {karier} is still in the {niat} category. Get to know this career better before you decide. Soft skills you can still improve: {prioritas}.',
+  ],
+  [
+    'R4',
+    'Niat kariermu sebagai {karier} masih di kategori {niat}, dan soft skill kamu secara keseluruhan di kategori {softskill}. Coba jelajahi karier TIK lain sambil melatih {prioritas}.',
+    'Your career intention for {karier} is still in the {niat} category, and your overall soft skills are in the {softskill} category. Explore other IT careers while practicing {prioritas}.',
+  ],
+  [
+    'X1_RENDAH',
+    'Soft skill intrapersonal (cara kamu mengelola diri sendiri) masih di kategori {intrapersonal}.',
+    'Your intrapersonal soft skills (how you manage yourself) are still in the {intrapersonal} category.',
+  ],
+  [
+    'X2_RENDAH',
+    'Soft skill interpersonal (cara kamu bekerja dengan orang lain) masih di kategori {interpersonal}.',
+    'Your interpersonal soft skills (how you work with other people) are still in the {interpersonal} category.',
+  ],
+];
+
 export const PENGATURAN = [
-  ['ambang_rendah', 50, 'Skor di bawah nilai ini berkategori rendah'],
-  ['ambang_tinggi', 75, 'Skor mulai nilai ini berkategori tinggi'],
-  ['ambang_aturan_y', 75, 'Ambang niat (Y) pada aturan R1–R4'],
-  ['ambang_aturan_sfs', 75, 'Ambang SFS pada aturan R1–R4'],
-  ['selisih_alternatif', 10, 'Selisih SFS minimal untuk menampilkan karier alternatif'],
+  ['ambang_rendah', 56, 'Nilai di bawah ini: Perlu Dikembangkan'],
+  ['ambang_tinggi', 76, 'Nilai mulai ini: Sangat Cocok (juga batas aturan R1–R4)'],
   ['jumlah_prioritas', 3, 'Jumlah indikator prioritas pengembangan'],
 ];
 

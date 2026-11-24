@@ -1,6 +1,6 @@
 // Dasbor mahasiswa: ringkasan hasil tes terakhir.
-import { $, api, catatanSementara, gagalMuat, html, mulaiHalaman, pasang, t, tanggal } from '../umum.js';
-import { daftarLatih, dataTampil, kotakHasil } from '../hasil-bagian.js';
+import { $, api, gagalMuat, html, mulaiHalaman, pasang, t, tanggal } from '../umum.js';
+import { daftarKategori, daftarLatih, kotakKarier } from '../hasil-bagian.js';
 
 const pengguna = await mulaiHalaman('mahasiswa');
 const utama = $('#utama');
@@ -20,7 +20,6 @@ try {
   } else {
     const terakhir = daftar[0];
     const [{ asesmen: a }, { karier }] = await Promise.all([api(`/assessments/${terakhir.id}`), api('/careers')]);
-    const d = dataTampil(a);
 
     pasang(utama, html`<div class="halaman halaman--sedang">
       <header class="halaman__kepala halaman__kepala--baris">
@@ -31,14 +30,19 @@ try {
         <a class="tombol" href="/app/asesmen">${t('hasil.ulangi')}</a>
       </header>
 
-      ${kotakHasil(a, karier)}
+      ${kotakKarier(a, karier)}
 
-      <section class="panel">
-        <h2>${t('hasil.latih')}</h2>
-        ${daftarLatih(d)}
-        <p><a class="tombol tombol--utama" href="/app/hasil?id=${terakhir.id}">${t('dasbor.lihat')}</a></p>
-        ${catatanSementara()}
-      </section>
+      <div class="dua-kolom">
+        <section class="panel">
+          <h2>${t('hasil.kategoriJudul')}</h2>
+          ${daftarKategori(a)}
+        </section>
+        <section class="panel">
+          <h2>${t('hasil.latih')}</h2>
+          ${daftarLatih(a.prioritas)}
+        </section>
+      </div>
+      <p><a class="tombol tombol--utama" href="/app/hasil?id=${terakhir.id}">${t('dasbor.lihat')}</a></p>
     </div>`);
   }
 } catch (e) {

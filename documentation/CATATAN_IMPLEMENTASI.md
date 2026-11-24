@@ -1,78 +1,77 @@
 # Catatan Implementasi
 
-Website dibangun dari `LAPORAN_BAB_1-3.md` (isi Google Docs per 16 November 2026). Catatan ini mencatat
+Website dibangun dari `LAPORAN_BAB_1-3.md` (isi Google Docs per 24 November 2026). Catatan ini mencatat
 bagian yang masih perlu diisi tim dan keputusan yang diambil ketika isi laporan tidak seragam.
+
+## Model Perhitungan yang Dipakai
+
+Mengikuti Subbab 2.7 dan 3.5 laporan (`behavioral-model/engine.js`):
+
+1. Nilai indikator = rata-rata jawaban butirnya (1–5), dinormalisasi `x' = (x − 1) / 4 × 100`.
+2. Nilai Y, X1, dan X2 = rata-rata nilai indikator anggotanya, tanpa bobot.
+3. Nilai soft skill gabungan `X = (X1 + X2) / 2`.
+4. Kategori: Perlu Dikembangkan (< 56), Cukup Cocok (56 sampai < 76), Sangat Cocok (≥ 76), untuk Y, X1, X2,
+   dan X. Ambang dapat diubah admin.
+5. Indikator prioritas: tiga soft skill dengan nilai terendah; bila seri, urutan mengikuti nomor indikator
+   pada Tabel 2.3.
+6. Tabel keputusan R1–R4 dari kombinasi Y dan X terhadap batas 76, ditambah aturan tambahan bila X1 < 56 atau
+   X2 < 56.
+7. Penjelasan hasil disusun dari templat per aturan (tabel `templat_penjelasan`), diisi label kategori, nama
+   karier pilihan, dan tiga indikator prioritas. Tanpa AI dan tanpa angka.
+
+Nilai angka hanya disimpan di backend (tabel `hasil_asesmen`) untuk pemetaan kategori dan analisis. Mahasiswa
+hanya melihat label kategori. Ringkasan admin menampilkan rata-rata nilai gabungan tanpa nama.
+
+Model lama (bobot, profil kebutuhan soft skill per karier, gap, SFS, karier paling cocok, dan karier alternatif)
+sudah dihapus dari website. Basis data lama diperbarui otomatis saat server menyala: tabel model lama dihapus,
+ambang bawaan 50/75 diganti 56/76, dan hasil tes lama dihitung ulang dari jawaban yang tersimpan.
 
 ## Perlu Dilengkapi Tim
 
-1. **Profil kebutuhan soft skill per karier masih data ilustratif.** Laporan (Subbab 3.4) menetapkan
-   `Req(r, i)` dan `w(r, i)` dihitung dari lowongan kerja jenjang awal 2026, tetapi angkanya belum ada di
-   laporan. Agar sistem bisa dijalankan, `database/data.js` berisi perkiraan frekuensi per karier
-   yang diolah dengan pita frekuensi laporan (80/65/50/35) dan `w = f / Σf`. **Angka ini bukan hasil survei
-   lowongan.** Ganti lewat menu Admin > Profil karier, atau ubah `FREKUENSI` sebelum basis data dibuat.
-   Selama angkanya masih sementara, setiap bagian yang bergantung padanya menampilkan catatan "angka sementara".
-   Setelah diganti, ubah `DATA_SEMENTARA` di `frontend/js/umum.js` menjadi `false`.
-2. **Saran pengembangan per indikator dan teks rekomendasi R1–R4** ditulis sebagai isi awal dan dapat diubah
-   lewat Admin > Bobot dan aturan.
-3. **Bobot indikator** bawaan sama rata (rata-rata biasa), sesuai Subbab 2.7.2. Bobot hasil *expert
-   judgment* dapat diisi lewat menu admin.
-4. **FR-08 (penjelasan AI) tidak memakai AI.** Atas keputusan tim, paragraf "Ringkasnya" di halaman hasil
-   disusun dari kalimat templat (`backend/ringkasan.js`), tanpa layanan AI dan tanpa kunci API. Bagian laporan
-   yang menyebut penjelasan AI (FR-08, UC-12, dan NFR terkait) perlu disesuaikan.
-5. **Analisis hubungan variabel (Subbab 3.5.4)**, yaitu korelasi dan regresi X1, X2 terhadap Y, dilakukan
-   di luar aplikasi. Admin > Ringkasan hasil hanya menampilkan rata-rata dan sebaran gabungan.
+1. **Teks rekomendasi R1–R4, aturan tambahan, templat penjelasan, dan saran per soft skill** ditulis sebagai
+   isi awal dan dapat diubah lewat Admin > Ambang dan aturan.
+2. **Analisis hubungan variabel (Subbab 3.5.4)**, yaitu korelasi dan regresi X1, X2 terhadap Y, dilakukan
+   di luar aplikasi. Admin > Ringkasan hasil hanya menampilkan sebaran dan rata-rata gabungan.
 
-## Keputusan saat isi laporan berbeda antarbagian
+## Keputusan Saat Isi Laporan Berbeda Antarbagian
 
 | Bagian laporan | Temuan | Implementasi |
 | --- | --- | --- |
-| 3.8.2 Prototype dan 3.9.1 | Masih memuat rancangan lama: *Intention Fit Score*, radar lima variabel (Learning Behavior, Self-Efficacy, Technical Competency, Soft Skill, Project Experience), soal pilihan ganda teknis, *roadmap*, proyeksi skor | Mengikuti model pada Bab 2 dan Subbab 3.2–3.6: hanya Y, X1, X2, dan SFS; radar 14 indikator soft skill terhadap kebutuhan karier; tanpa soal teknis, tanpa skor *self-efficacy*, tanpa *roadmap* |
-| Tabel 3.4 | ID `FR-07` dipakai tiga kali | Dua yang terakhir diperlakukan sebagai kebutuhan admin tersendiri (kelola instrumen/model; kelola akun dan pantau agregat) |
-| Tabel 3.6 | Keterangan UC-07 berisi akun dan agregat; UC-11 dan UC-12 merujuk *include* ke UC-02 dan UC-03 | Hitung skor dijalankan saat kuesioner dikirim (UC-03); ringkasan (templat) disusun saat hasil ditampilkan (UC-04) |
+| 3.8.2 Prototype dan 3.9.1 | Menyebut CTA dan data *roadmap* karier per peran, tetapi isi *roadmap* tidak dijelaskan di bagian lain | Atas keputusan tim, *roadmap* belum dibuat |
+| 3.8.2 Prototype | *Hero section* hanya menyebut badge Y, X1, dan X2 | Mengikuti FR-06 dan 3.8.1: kategori Y, X1, X2, dan X ditampilkan |
 | 3.9.2 Lingkungan pengembangan | Menyebut JavaScript/TypeScript dan React.js | Atas permintaan tim, frontend ditulis dengan HTML, CSS, dan JavaScript biasa (tanpa React, tanpa TypeScript) dan backend dengan JavaScript (Node.js + Express). PostgreSQL tetap. **Subbab 3.9.2 pada laporan perlu disesuaikan.** |
-| 3.4 | Merujuk "14 indikator pada Tabel 2.2" | Dipakai 14 indikator pada Tabel 2.3 |
-| 2.7.3 | Ambang kategori "dapat diubah Operator Admin" | Ambang kategori, ambang aturan (75), selisih alternatif (10), dan jumlah prioritas (3) dapat diubah admin |
-| 3.5.2 | Status Selaras/Berbeda tidak menyebut kasus seri | Bila SFS karier pilihan sama dengan SFS tertinggi, status "Selaras" |
+| 2.7.3 dan 3.5.3 | Batas aturan R1–R4 (76) sama dengan batas Sangat Cocok | Satu pengaturan "ambang tinggi" dipakai untuk keduanya, jadi keduanya selalu sejalan |
+| 3.7.4 ERD | Entitas `HASIL_ASESMEN` | Tabel `hasil_asesmen` menyimpan nilai internal, label kategori, aturan, dan detail hasil (termasuk tiga indikator prioritas) |
 
 ## Tampilan Hasil untuk Mahasiswa
 
-Halaman hasil, dasbor, dan riwayat mahasiswa tidak lagi menampilkan angka maupun istilah
-teknis. Yang ditampilkan:
+Halaman hasil (`frontend/js/halaman/hasil.js`) menampilkan:
 
-- Satu karier hasil akhir, yaitu karier dengan SFS tertinggi dari 16 karier (bisa berbeda dari karier yang
-  dipilih mahasiswa), dengan label "Sangat cocok" (SFS ≥ ambang tinggi), "Cukup cocok" (≥ ambang rendah), atau
-  "Masih perlu dikembangkan".
-- Tiga soft skill dengan skor tertinggi (kekuatan).
-- Soft skill yang perlu dilatih untuk karier hasil (prioritas `w × Gap` terbesar), masing-masing dengan saran.
-- Spider chart 14 soft skill terhadap kebutuhan karier hasil, tanpa angka; soft skill yang masih di bawah
-  kebutuhan ditandai titik kuning.
-- Tiga karier alternatif (SFS tertinggi berikutnya), tanpa angka.
-- Ringkasan singkat dari kalimat templat, juga tanpa angka.
+- Karier yang dipilih mahasiswa ("Hasil untuk karier pilihanmu").
+- Kategori niat karier (Y), soft skill secara keseluruhan (X), intrapersonal (X1), dan interpersonal (X2),
+  tanpa angka.
+- Ringkasan dari templat penjelasan.
+- Rekomendasi dari aturan yang terpicu, ditambah aturan tambahan bila ada.
+- Tiga soft skill prioritas, masing-masing dengan saran.
+- Spider chart 14 soft skill, tanpa angka. Zona kuning menandai kategori Sangat Cocok, garis putus-putus
+  menandai batas Perlu Dikembangkan, dan titik kuning menandai soft skill prioritas. Spider chart tidak disebut di
+  laporan; dipertahankan atas keputusan tim.
 
-Perhitungan di backend tidak berubah: skor Y, X1, X2, SFS, aturan R1–R4, dan prioritas untuk karier pilihan tetap
-dihitung, disimpan, dan dipakai pada ringkasan admin.
-
-**Yang perlu disesuaikan di laporan:** FR-07 (Tabel 3.4) dan Subbab 3.8.1 menyebut halaman hasil menampilkan skor
-Y, X1, X2, SFS karier pilihan, status kesesuaian, dan prioritas. Tampilan sekarang tidak lagi memperlihatkannya
-kepada mahasiswa, dan hasil utamanya adalah karier paling cocok, bukan karier pilihan.
+Teks rekomendasi dan templat diambil dari pengaturan admin terbaru setiap kali hasil dibuka, sedangkan kategori
+dan prioritas disimpan sebagai potret saat tes dikerjakan (perubahan ambang tidak mengubah hasil lama).
 
 ## Fitur Tambahan di Luar Laporan
 
 - **Mode gelap** dengan tombol ganti tema; awalnya mengikuti setting perangkat.
-- **Bahasa Inggris** untuk seluruh sisi mahasiswa (termasuk 36 pertanyaan, deskripsi karier, saran latihan, dan
-  ringkasan). Menu admin tetap bahasa Indonesia. Terjemahan bawaan ditulis tim pengembang dan belum diperiksa
-  ahli bahasa; pertanyaan kuesioner versi Inggris juga belum diuji validitasnya.
+- **Bahasa Inggris** untuk seluruh sisi mahasiswa (termasuk 36 pertanyaan, deskripsi karier, saran latihan,
+  rekomendasi, dan templat penjelasan). Menu admin tetap bahasa Indonesia. Terjemahan bawaan ditulis tim
+  pengembang dan belum diperiksa ahli bahasa; pertanyaan kuesioner versi Inggris juga belum diuji validitasnya.
 - **Data demo** (`npm run demo`): akun demo dan 15 mahasiswa contoh dengan jawaban acak. Data ini bukan data
   responden sungguhan dan tidak boleh dipakai untuk analisis.
 
-Hasil asesmen disimpan sebagai potret (skor, selisih, aturan, dan teks rekomendasi saat itu), sehingga
-perubahan bobot atau aturan oleh admin tidak mengubah hasil lama.
-
 ## Hal Kecil pada Naskah Laporan
 
-- Rujukan silang *self-efficacy* menyebut Subbab 2.2.4, sedangkan pembahasannya ada di 2.2.3.
-- Judul Subbab 2.4.3 muncul dua kali; yang kedua berisi kompetensi yang tidak dijadikan indikator.
-- Tabel 3.8 tertulis "Kuesioner SUz 10 butir".
-- Daftar Pustaka masih memuat entri "[LENGKAPI]" (Ula & Faisal, 2025; Wibowo, 2020), dan sumber butir pada
-  Subbab 3.3 (misalnya Harred dkk., 2023; Sosu, 2013; Heppner & Petersen, 1982; Tierney & Farmer, 2002)
-  belum tercantum.
+- Sumber butir pada Subbab 3.3 (misalnya Harred dkk., 2023; Sosu, 2013; Heppner & Petersen, 1982; Tierney &
+  Farmer, 2002) belum tercantum di Daftar Pustaka.
+- Judul Subbab 2.4.3 dan 2.4.4 sama persis ("Pemetaan MSIS 2016 dan ASEC ke Variabel Penelitian"); yang kedua
+  berisi kompetensi yang tidak dijadikan indikator.

@@ -1,6 +1,7 @@
 // Riwayat tes mahasiswa.
-import { $, api, catatanSementara, gagalMuat, html, ikon, mulaiHalaman, pasang, t, tanggal } from '../umum.js';
+import { $, api, gagalMuat, html, ikon, mulaiHalaman, pasang, t, tanggal } from '../umum.js';
 import { IKON_KARIER } from '../ikon.js';
+import { capKategori } from '../hasil-bagian.js';
 
 await mulaiHalaman('mahasiswa');
 
@@ -20,20 +21,21 @@ try {
           <table class="tabel">
             <thead>
               <tr>
-                <th>${t('riwayat.tanggal')}</th><th>${t('riwayat.pilihan')}</th><th>${t('riwayat.cocok')}</th>
+                <th>${t('riwayat.tanggal')}</th><th>${t('riwayat.karier')}</th>
+                <th>${t('variabel.Y')}</th><th>${t('variabel.X')}</th>
                 <th><span class="sr">${t('riwayat.buka')}</span></th>
               </tr>
             </thead>
             <tbody>
               ${asesmen.map((a) => html`<tr>
                 <td>${tanggal(a.dibuatPada)}</td>
-                <td>${a.karier}</td>
-                <th scope="row"><span class="dengan-ikon">${ikon(IKON_KARIER[a.kodeHasil])} ${a.karierHasil}</span></th>
+                <th scope="row"><span class="dengan-ikon">${ikon(IKON_KARIER[a.kodeKarier])} ${a.karier}</span></th>
+                <td>${capKategori(a.kategoriY)}</td>
+                <td>${capKategori(a.kategoriX)}</td>
                 <td><a href="/app/hasil?id=${a.id}">${t('riwayat.lihat')}</a></td>
               </tr>`)}
             </tbody>
           </table>
-          ${catatanSementara()}
         </div>`}
   </div>`);
 } catch (e) {

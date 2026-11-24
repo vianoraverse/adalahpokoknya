@@ -35,26 +35,28 @@ halaman hasil tanpa ngisi tes dulu.)
    Waktu tombol "Kirim jawaban" ditekan, semua jawaban dikirim ke `/api/assessments`.
 4. **Backend ngitung hasil** (`backend/routes/asesmen.js` manggil `hitung()` di `behavioral-model/engine.js`), lalu
    nyimpen hasilnya ke database.
-5. **Halaman hasil** (`app/hasil.html` + `js/halaman/hasil.js`) nampilin karier paling cocok, kekuatan, yang bisa
-   dilatih, spider chart, 3 karier alternatif, dan ringkasan singkat.
+5. **Halaman hasil** (`app/hasil.html` + `js/halaman/hasil.js`) nampilin karier yang dipilih, kategori
+   kecocokan, ringkasan, rekomendasi, tiga soft skill yang perlu dilatih, dan spider chart.
 
 ## 3. Cara ngitung hasil (versi singkat)
 
 Semua ada di `behavioral-model/engine.js`, fungsi `hitung()`.
 
-1. Tiap soft skill punya 2 pertanyaan. Jawaban 1 sampai 5 dirata-rata, lalu diubah ke skala 0 sampai 100.
-2. Tiap karier punya "kebutuhan" untuk tiap soft skill (angka 0 sampai 100) dan "bobot" (seberapa penting).
-   Angka ini ada di database, bisa diubah di menu Admin > Profil karier.
-3. Untuk tiap karier, dihitung seberapa jauh skor mahasiswa di bawah kebutuhan karier itu. Makin kecil
-   kekurangannya, makin cocok kariernya. Angka kecocokan ini namanya **SFS** di kode.
-4. Karier dengan SFS paling tinggi jadi **hasil akhir**. Tiga karier berikutnya jadi **alternatif**.
-5. Soft skill dengan kekurangan paling berpengaruh untuk karier hasil jadi **yang bisa dilatih**. Tiga soft skill
-   dengan skor tertinggi jadi **kekuatan**.
+1. Tiap indikator punya 2 pertanyaan. Jawaban 1 sampai 5 dirata-rata, lalu diubah ke skala 0 sampai 100.
+2. Niat karier (Y), soft skill intrapersonal (X1), dan interpersonal (X2) = rata-rata indikatornya masing-masing.
+   Semua indikator sama penting, nggak ada bobot.
+3. Soft skill gabungan X = (X1 + X2) / 2.
+4. Tiap nilai dimasukkan ke kategori: di bawah 56 **Perlu Dikembangkan**, 56 sampai di bawah 76 **Cukup Cocok**,
+   76 ke atas **Sangat Cocok**.
+5. Tiga soft skill dengan nilai paling rendah jadi **prioritas latihan**.
+6. Rekomendasi dipilih dari tabel keputusan R1 sampai R4 (kombinasi Y dan X), plus saran tambahan kalau X1 atau X2
+   di bawah 56.
+7. Kalimat "Ringkasnya" diambil dari templat per aturan, terus diisi nama karier, kategori, dan tiga prioritas
+   (`backend/ringkasan.js`).
 
-Angka-angka ini nggak ditampilin ke mahasiswa. Yang tampil cuma nama karier, label ("Sangat cocok", "Cukup
-cocok", "Masih perlu dikembangkan"), dan daftar soft skill.
+Angka-angka ini nggak ditampilin ke mahasiswa. Yang tampil cuma label kategori dan daftar soft skill.
 
-Rumus lengkap dan asalnya ada di `CATATAN_IMPLEMENTASI.md` dan di laporan (Subbab 2.7 dan 3.4 sampai 3.5).
+Rumus lengkap dan asalnya ada di laporan (Subbab 2.7 dan 3.5) dan di `CATATAN_IMPLEMENTASI.md`.
 
 ## 4. File mana ngapain
 
@@ -81,15 +83,15 @@ Rumus lengkap dan asalnya ada di `CATATAN_IMPLEMENTASI.md` dan di laporan (Subba
 | `backend/index.js` | Titik mulai server. Nyambungin semua bagian. |
 | `backend/routes/auth.js` | API daftar, masuk, keluar, ubah profil, hapus akun. |
 | `backend/routes/asesmen.js` | API daftar karier, pertanyaan, kirim jawaban, ambil hasil (termasuk ringkasan). |
-| `backend/routes/admin.js` | API khusus admin: kelola pertanyaan, bobot, aturan, profil karier, akun, ringkasan. |
-| `backend/ringkasan.js` | Nyusun teks "Ringkasnya" di halaman hasil dari kalimat templat. |
+| `backend/routes/admin.js` | API khusus admin: kelola pertanyaan, ambang, aturan, templat penjelasan, akun, ringkasan. |
+| `backend/ringkasan.js` | Ngisi templat penjelasan (dari database) jadi teks "Ringkasnya" di halaman hasil. |
 | `backend/auth.js` | Ngecek siapa yang login dan perannya (mahasiswa atau admin). |
 | `backend/db.js` | Koneksi database. |
 | `behavioral-model/engine.js` | Semua rumus perhitungan. |
 | `testing/engine.test.js` | Tes otomatis buat rumus. Jalanin dengan `npm test`. |
 | `database/schema.sql` | Daftar tabel database. |
-| `database/data.js` | Data awal: 16 karier, 36 pertanyaan, profil karier, aturan. Cuma dipakai waktu database masih kosong. |
-| `database/seed.js` | Masukin data awal itu ke database. |
+| `database/data.js` | Data awal: 16 karier, 36 pertanyaan, aturan, templat penjelasan, ambang. Cuma dipakai waktu database masih kosong. |
+| `database/seed.js` | Masukin data awal itu ke database, dan memperbarui database lama ke model terbaru. |
 
 ## 5. Cara ngubah hal yang sering diubah
 
@@ -99,8 +101,8 @@ Rumus lengkap dan asalnya ada di `CATATAN_IMPLEMENTASI.md` dan di laporan (Subba
 | Warna mode gelap | Edit bagian `:root[data-tema='gelap']` di `frontend/css/styles.css`. |
 | Warna atau huruf | Edit bagian `:root` di `frontend/css/styles.css`. |
 | Teks halaman hasil | Edit `frontend/js/halaman/hasil.js` atau `frontend/js/hasil-bagian.js`. |
-| Teks "Ringkasnya" | Edit fungsi `susunRingkasan` di `backend/ringkasan.js` (server nyala ulang sendiri). |
-| Pertanyaan, bobot, profil karier, teks saran | Lewat menu admin di website, nggak perlu ngoding. |
+| Teks "Ringkasnya" | Lewat menu Admin > Ambang dan aturan, bagian Templat penjelasan. |
+| Pertanyaan, ambang, teks rekomendasi, saran | Lewat menu admin di website, nggak perlu ngoding. |
 | Rumus | Edit `behavioral-model/engine.js`, lalu jalanin `npm test` buat ngecek nggak ada yang rusak. |
 
 ## 6. Mode gelap dan bahasa
@@ -114,16 +116,7 @@ Rumus lengkap dan asalnya ada di `CATATAN_IMPLEMENTASI.md` dan di laporan (Subba
   `saran_en`); frontend minta versi Inggris lewat header `X-Bahasa: en`. Admin bisa mengisi teks Inggris di
   form butir dan form indikator. Menu admin sendiri selalu bahasa Indonesia.
 
-## 7. Catatan "angka sementara"
-
-Profil kebutuhan soft skill tiap karier masih angka sementara, jadi semua bagian yang hasilnya bergantung pada
-angka itu (karier hasil, yang bisa dilatih, spider chart, karier alternatif, ringkasan, dan beberapa bagian di
-ringkasan admin) diberi catatan kecil di pojok kanan bawah.
-
-Kalau profil karier sudah diisi data asli dari lowongan kerja, buka `frontend/js/umum.js`, cari
-`DATA_SEMENTARA = true`, lalu ubah jadi `false`. Semua catatan hilang sekaligus.
-
-## 8. Satu aturan penting
+## 7. Satu aturan penting
 
 Waktu nampilin data di halaman, pakai fungsi `html` dari `js/umum.js`, contohnya:
 

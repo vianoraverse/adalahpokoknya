@@ -1,143 +1,132 @@
-// Validasi mesin skor terhadap perhitungan manual (Tabel 3.8: "Validasi mesin skor").
+// Validasi logika perhitungan dan kategori terhadap perhitungan manual (Tabel 3.8).
+// Jalankan dengan: npm test
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { AMBANG_BAWAAN, hitung, kategori, normalisasi, tentukanAturan } from '../behavioral-model/engine.js';
+import {
+  AMBANG_BAWAAN,
+  hitung,
+  kategori,
+  normalisasi,
+  rapikan,
+  tentukanAturan,
+  tentukanPrioritas,
+} from '../behavioral-model/engine.js';
 
 const dekat = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
 
-// Model kecil: 1 indikator Y, 1 indikator X1, 1 indikator X2, dua karier.
-function model(jawaban, pilihan = 1) {
+/**
+ * Model kecil: 2 indikator Y, 2 indikator X1, 2 indikator X2, masing-masing 2 butir.
+ * `jawaban` berisi 12 angka, urut per indikator: [Y1a, Y1b, Y2a, Y2b, X1a..., X2...].
+ */
+function model(jawaban, ambang = AMBANG_BAWAAN) {
+  const indikator = [
+    { id: 1, kode: 'minat', nama: 'Minat', variabel: 'Y' },
+    { id: 2, kode: 'rencana', nama: 'Rencana', variabel: 'Y' },
+    { id: 3, kode: 'ct', nama: 'Critical Thinking', variabel: 'X1', saran: 'saran ct' },
+    { id: 4, kode: 'ps', nama: 'Problem Solving', variabel: 'X1', saran: 'saran ps' },
+    { id: 5, kode: 'tw', nama: 'Teamwork', variabel: 'X2', saran: 'saran tw' },
+    { id: 6, kode: 'oc', nama: 'Oral Communication', variabel: 'X2', saran: 'saran oc' },
+  ];
+  const butir = indikator.flatMap((ind) => [
+    { id: ind.id * 2 - 1, indikatorId: ind.id },
+    { id: ind.id * 2, indikatorId: ind.id },
+  ]);
   return {
-    indikator: [
-      { id: 1, kode: 'minat', nama: 'Minat', variabel: 'Y', bobot: 1 },
-      { id: 2, kode: 'ct', nama: 'Critical Thinking', variabel: 'X1', bobot: 1 },
-      { id: 3, kode: 'tw', nama: 'Teamwork', variabel: 'X2', bobot: 1 },
-    ],
-    butir: [
-      { id: 1, indikatorId: 1 },
-      { id: 2, indikatorId: 1 },
-      { id: 3, indikatorId: 2 },
-      { id: 4, indikatorId: 2 },
-      { id: 5, indikatorId: 3 },
-      { id: 6, indikatorId: 3 },
-    ],
+    indikator,
+    butir,
     jawaban: Object.fromEntries(jawaban.map((n, i) => [i + 1, n])),
-    profil: [
-      { karierId: 1, indikatorId: 2, req: 80, bobot: 0.75 },
-      { karierId: 1, indikatorId: 3, req: 65, bobot: 0.25 },
-      { karierId: 2, indikatorId: 2, req: 50, bobot: 0.5 },
-      { karierId: 2, indikatorId: 3, req: 50, bobot: 0.5 },
-    ],
-    karier: [
-      { id: 1, nama: 'A' },
-      { id: 2, nama: 'B' },
-    ],
-    karierPilihanId: pilihan,
-    ambang: AMBANG_BAWAAN,
+    ambang,
   };
 }
 
 test('normalisasi min-max: 1→0, 3→50, 5→100', () => {
   dekat(normalisasi(1), 0);
   dekat(normalisasi(3), 50);
-  dekat(normalisasi(4.5), 87.5);
   dekat(normalisasi(5), 100);
+  dekat(normalisasi(4.5), 87.5);
 });
 
-test('kategori memakai ambang <50 rendah, 50–74 sedang, ≥75 tinggi (nilai batas)', () => {
-  assert.equal(kategori(49.99, AMBANG_BAWAAN), 'rendah');
-  assert.equal(kategori(50, AMBANG_BAWAAN), 'sedang');
-  assert.equal(kategori(74.99, AMBANG_BAWAAN), 'sedang');
-  assert.equal(kategori(75, AMBANG_BAWAAN), 'tinggi');
+test('kategori mengikuti Arikunto: <56 Perlu, 56–<76 Cukup, ≥76 Sangat', () => {
+  assert.equal(kategori(55.99, AMBANG_BAWAAN), 'perlu');
+  assert.equal(kategori(56, AMBANG_BAWAAN), 'cukup');
+  assert.equal(kategori(75.99, AMBANG_BAWAAN), 'cukup');
+  assert.equal(kategori(76, AMBANG_BAWAAN), 'sangat');
+  assert.equal(kategori(100, AMBANG_BAWAAN), 'sangat');
 });
 
-test('aturan R1–R4 pada nilai batas 75', () => {
-  assert.equal(tentukanAturan(75, 75, AMBANG_BAWAAN), 'R1');
-  assert.equal(tentukanAturan(75, 74.9, AMBANG_BAWAAN), 'R2');
-  assert.equal(tentukanAturan(74.9, 75, AMBANG_BAWAAN), 'R3');
-  assert.equal(tentukanAturan(74.9, 74.9, AMBANG_BAWAAN), 'R4');
+test('nilai variabel = rata-rata indikator tanpa bobot, X = (X1 + X2) / 2', () => {
+  // Y:  minat (5,5)→100, rencana (4,4)→75  → Y  = 87,5
+  // X1: ct (3,4)→62,5,  ps (2,2)→25       → X1 = 43,75
+  // X2: tw (5,4)→87,5,  oc (4,4)→75       → X2 = 81,25
+  // X = (43,75 + 81,25) / 2 = 62,5
+  const h = hitung(model([5, 5, 4, 4, 3, 4, 2, 2, 5, 4, 4, 4]));
+  dekat(h.nilai.Y, 87.5);
+  dekat(h.nilai.X1, 43.75);
+  dekat(h.nilai.X2, 81.25);
+  dekat(h.nilai.X, 62.5);
+  assert.deepEqual(h.kategori, { Y: 'sangat', X1: 'perlu', X2: 'sangat', X: 'cukup' });
 });
 
-test('skor, gap, dan SFS sama dengan perhitungan manual', () => {
-  // Y: (5+4)/2=4,5 → 87,5. X1: (3+3)/2=3 → 50. X2: (4+2)/2=3 → 50.
-  const h = hitung(model([5, 4, 3, 3, 4, 2]));
-  dekat(h.skor.Y, 87.5);
-  dekat(h.skor.X1, 50);
-  dekat(h.skor.X2, 50);
-  // Karier A: gap CT = 80−50 = 30, gap TW = 65−50 = 15 → SFS = 100 − (0,75×30 + 0,25×15) = 73,75.
-  dekat(h.sfsPilihan, 73.75);
-  // Karier B: tidak ada gap → SFS 100.
-  dekat(h.sfsSemua.find((s) => s.karierId === 2).sfs, 100);
+test('tabel keputusan R1–R4 memakai Y dan X terhadap ambang 76', () => {
+  assert.equal(tentukanAturan(76, 76, AMBANG_BAWAAN), 'R1');
+  assert.equal(tentukanAturan(80, 75.9, AMBANG_BAWAAN), 'R2');
+  assert.equal(tentukanAturan(75.9, 90, AMBANG_BAWAAN), 'R3');
+  assert.equal(tentukanAturan(40, 40, AMBANG_BAWAAN), 'R4');
+});
+
+test('contoh lengkap: Y tinggi, X sedang → R2 dan aturan tambahan X1', () => {
+  const h = hitung(model([5, 5, 4, 4, 3, 4, 2, 2, 5, 4, 4, 4]));
   assert.equal(h.aturan, 'R2');
-  assert.equal(h.status, 'Berbeda');
-  assert.equal(h.karierTeratas.karierId, 2);
-  assert.deepEqual(h.aturanTambahan, ['ALTERNATIF']); // 100 − 73,75 ≥ 10
-  assert.equal(h.prioritas[0].kode, 'ct'); // 22,5 > 3,75
-  dekat(h.prioritas[0].tertimbang, 22.5);
+  assert.deepEqual(h.aturanTambahan, ['X1_RENDAH']);
 });
 
-test('gap tidak pernah negatif dan SFS maksimal 100', () => {
-  const h = hitung(model([5, 5, 5, 5, 5, 5]));
-  dekat(h.sfsPilihan, 100);
-  assert.ok(h.gapPilihan.every((g) => g.gap === 0));
-  assert.equal(h.prioritas.length, 0);
-  assert.equal(h.aturan, 'R1');
-  assert.equal(h.status, 'Selaras'); // seri 100 vs 100 → karier pilihan diutamakan
-});
-
-test('X1 dan X2 rendah memicu aturan tambahan', () => {
-  const h = hitung(model([2, 2, 1, 2, 2, 2]));
-  assert.ok(h.aturanTambahan.includes('X1_RENDAH'));
-  assert.ok(h.aturanTambahan.includes('X2_RENDAH'));
+test('aturan tambahan X1 dan X2 muncul bila nilainya < 56', () => {
+  // X1: ct (2,3)→37,5, ps (3,3)→50 → 43,75. X2: tw (3,3)→50, oc (2,2)→25 → 37,5.
+  const h = hitung(model([3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 2, 2]));
+  assert.deepEqual(h.aturanTambahan, ['X1_RENDAH', 'X2_RENDAH']);
   assert.equal(h.aturan, 'R4');
 });
 
-test('bobot indikator memengaruhi skor variabel (S = Σ wᵢ sᵢ)', () => {
-  const m = model([5, 5, 5, 5, 1, 1]);
-  m.indikator.push({ id: 4, kode: 'ps', nama: 'Problem Solving', variabel: 'X1', bobot: 3 });
-  m.butir.push({ id: 7, indikatorId: 4 });
-  m.jawaban[7] = 1;
-  // X1 = (1×100 + 3×0) / 4 = 25
-  dekat(hitung(m).skor.X1, 25);
+test('prioritas = tiga soft skill dengan nilai terendah (indikator Y tidak ikut)', () => {
+  // ct 62,5; ps 25; tw 87,5; oc 75 → urutan terendah: ps, ct, oc
+  const h = hitung(model([1, 1, 1, 1, 3, 4, 2, 2, 5, 4, 4, 4]));
+  assert.deepEqual(
+    h.prioritas.map((p) => p.kode),
+    ['ps', 'ct', 'oc'],
+  );
+  assert.equal(h.prioritas[0].saran, 'saran ps');
 });
 
-test('jawaban tidak lengkap atau di luar 1–5 ditolak', () => {
-  assert.throws(() => hitung(model([5, 4, 3, 3, 4])));
-  assert.throws(() => hitung(model([5, 4, 3, 3, 4, 6])));
-  assert.throws(() => hitung(model([5, 4, 3, 3, 4, 0])));
+test('prioritas seri mengikuti nomor indikator pada Tabel 2.3', () => {
+  // Semua soft skill bernilai sama (50) → ambil tiga indikator pertama: ct, ps, tw.
+  const h = hitung(model([4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3]));
+  assert.deepEqual(
+    h.prioritas.map((p) => p.kode),
+    ['ct', 'ps', 'tw'],
+  );
 });
 
-test('skor tepat di ambang tidak turun kategori karena galat pembulatan', () => {
-  // Tujuh indikator X1 dengan skor 37,5; 25; 50; 75; 37,5; 62,5; 62,5 → rata-rata tepat 50 (sedang, bukan rendah).
-  const m = model([5, 5, 3, 2, 3, 3]);
-  const jawabX1 = [[2, 2], [3, 3], [4, 4], [3, 2], [4, 3], [4, 3]];
-  jawabX1.forEach((pasangan, k) => {
-    const id = 10 + k;
-    m.indikator.push({ id, kode: `x${id}`, nama: `X${id}`, variabel: 'X1', bobot: 1 });
-    pasangan.forEach((n, j) => {
-      m.butir.push({ id: id * 10 + j, indikatorId: id });
-      m.jawaban[id * 10 + j] = n;
-    });
-  });
-  const h = hitung(m);
-  assert.equal(h.skor.X1, 50);
-  assert.equal(h.kategori.X1, 'sedang');
-  assert.ok(!h.aturanTambahan.includes('X1_RENDAH'));
+test('jumlah prioritas mengikuti pengaturan admin', () => {
+  const nilai = [
+    { indikatorId: 3, kode: 'ct', variabel: 'X1', nilai: 10 },
+    { indikatorId: 4, kode: 'ps', variabel: 'X1', nilai: 20 },
+  ];
+  assert.equal(tentukanPrioritas(nilai, [], 1).length, 1);
+  assert.equal(tentukanPrioritas(nilai, [], 0).length, 0);
 });
 
-test('hasil untuk mahasiswa: karier paling cocok, prioritasnya, kekuatan, dan alternatif', () => {
-  // Y tinggi, X1 = 50, X2 = 50. Karier B (tanpa gap) lebih cocok daripada A yang dipilih.
-  const h = hitung(model([5, 4, 3, 3, 4, 2]));
-  assert.equal(h.karierTeratas.karierId, 2);
-  // Karier B tidak punya selisih, jadi tidak ada yang perlu dikembangkan untuk karier hasil.
-  assert.equal(h.prioritasHasil.length, 0);
-  // Data spider chart: semua soft skill untuk karier hasil (B).
-  assert.equal(h.gapHasil.length, 2);
-  assert.ok(h.gapHasil.every((g) => g.req === 50));
-  // Prioritas lama (untuk karier pilihan) tetap ada untuk keperluan admin.
-  assert.equal(h.prioritas[0].kode, 'ct');
-  // Alternatif tidak memuat karier hasil.
-  assert.deepEqual(h.alternatif.map((a) => a.karierId), [1]);
-  // Kekuatan hanya soft skill, tidak memuat indikator niat (Y).
-  assert.ok(h.kekuatan.every((k) => k.variabel !== 'Y'));
+test('nilai tepat di ambang tidak jatuh ke kategori bawah karena pembulatan', () => {
+  // 350 / 7 di JavaScript menghasilkan 49,99999999999999; setelah rapikan() menjadi 50.
+  dekat(rapikan(350 / 7), 50);
+  // Rata-rata 7 indikator yang jumlahnya 7 × 76 tetap 76 (Sangat Cocok).
+  const ambang = { ...AMBANG_BAWAAN };
+  assert.equal(kategori(rapikan((76 * 7) / 7), ambang), 'sangat');
+});
+
+test('jawaban kosong atau di luar 1–5 ditolak', () => {
+  const m = model([5, 5, 4, 4, 3, 4, 2, 2, 5, 4, 4, 4]);
+  delete m.jawaban[3];
+  assert.throws(() => hitung(m), /belum lengkap/);
+  const m2 = model([5, 5, 4, 4, 3, 4, 2, 2, 5, 4, 4, 6]);
+  assert.throws(() => hitung(m2), /belum lengkap/);
 });

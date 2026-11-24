@@ -68,18 +68,6 @@ export const bulat = (n) =>
 export const tanggal = (s) =>
   new Date(s).toLocaleDateString(bhs() === 'en' ? 'en-GB' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
-/* ---------- Catatan data sementara ----------
-   Profil kebutuhan soft skill tiap karier masih memakai angka sementara, belum dari data lowongan kerja.
-   Semua bagian yang hasilnya bergantung pada angka itu diberi catatan kecil di pojok bawah.
-   Kalau profil karier sudah diisi data asli, ubah DATA_SEMENTARA jadi false: semua catatan hilang sekaligus. */
-
-export const DATA_SEMENTARA = true;
-
-export function catatanSementara() {
-  if (!DATA_SEMENTARA) return '';
-  return html`<p class="catatan-sementara">${tHtml('catatan.sementara')}</p>`;
-}
-
 /* ---------- Komponen kecil ---------- */
 
 export const logo = html`<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
@@ -175,8 +163,7 @@ const MENU = {
   admin: [
     ['/admin/', 'Ringkasan hasil', 'ringkasan'],
     ['/admin/butir', 'Butir kuesioner', 'butir'],
-    ['/admin/model', 'Bobot dan aturan', 'model'],
-    ['/admin/profil-karier', 'Profil karier', 'profil'],
+    ['/admin/model', 'Ambang dan aturan', 'model'],
     ['/admin/akun', 'Akun pengguna', 'akun'],
     ['/admin/pengaturan', 'Pengaturan', 'pengaturan'],
   ],

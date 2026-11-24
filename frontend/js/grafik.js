@@ -1,6 +1,6 @@
-// Spider chart di halaman hasil: soft skill mahasiswa dibandingkan dengan yang dibutuhkan karier hasil.
-// Sengaja tanpa angka. Soft skill yang jadi prioritas latihan (sama dengan daftar "Yang bisa kamu latih")
-// ditandai titik kuning.
+// Spider chart di halaman hasil: nilai 14 soft skill mahasiswa, digambar tanpa angka.
+// Zona kuning = kategori Sangat Cocok, garis putus-putus = batas Perlu Dikembangkan.
+// Soft skill prioritas latihan (sama dengan daftar "Yang perlu kamu latih") ditandai titik kuning.
 import { $, $$, html, pasang, t } from './umum.js';
 
 // Label dipecah jadi dua baris supaya muat di sekeliling diagram.
@@ -19,10 +19,11 @@ const SINGKAT = {
 
 /**
  * Menggambar spider chart ke dalam `wadah`.
- * `data`: daftar soft skill dengan skor (skor) dan kebutuhan (req).
+ * `data`: daftar soft skill { kode, nama, nilai } (nilai 0–100, tidak ditampilkan).
+ * `ambang`: { rendah, tinggi } batas kategori.
  * `prioritas`: kode soft skill yang ditandai titik kuning.
  */
-export function gambarRadar(wadah, data, namaKarier, prioritas = []) {
+export function gambarRadar(wadah, data, ambang, prioritas = []) {
   const n = data.length;
   // Di layar sempit diagramnya diperkecil supaya label yang dibesarkan tetap muat.
   const kecil = wadah.clientWidth < 500;
@@ -36,31 +37,36 @@ export function gambarRadar(wadah, data, namaKarier, prioritas = []) {
     const sudut = (Math.PI * 2 * i) / n - Math.PI / 2;
     return [CX + Math.cos(sudut) * R * (v / 100), CY + Math.sin(sudut) * R * (v / 100)];
   };
-  const poligon = (ambil) => data.map((d, i) => titik(i, ambil(d)).map((x) => x.toFixed(1)).join(',')).join(' ');
-  const cincin = (g) => data.map((_, i) => titik(i, g).map((x) => x.toFixed(1)).join(',')).join(' ');
-  const kurang = (d) => d.skor < d.req;
+  const teks = (pts) => pts.map((p) => p.map((x) => x.toFixed(1)).join(',')).join(' ');
+  const cincin = (g) => teks(data.map((_, i) => titik(i, g)));
+  // Jalur cincin untuk zona (luar searah jarum jam, dalam berlawanan) supaya bagian tengahnya kosong.
+  const jalurCincin = (g) => `M${data.map((_, i) => titik(i, g).map((x) => x.toFixed(1)).join(',')).join('L')}Z`;
   const utama = (d) => prioritas.includes(d.kode);
-  const status = (d) => t(utama(d) ? 'radar.prioritas' : kurang(d) ? 'radar.kurang' : 'radar.cukup');
+  const kat = (d) => (d.nilai >= ambang.tinggi ? 'sangat' : d.nilai >= ambang.rendah ? 'cukup' : 'perlu');
+  const status = (d) => t(`kategori.${kat(d)}`) + (utama(d) ? ` · ${t('radar.prioritas')}` : '');
 
   pasang(wadah, html`
     <ul class="legenda" aria-hidden="true">
       <li><i class="legenda__kamu"></i> ${t('radar.kamu')}</li>
-      <li><i class="legenda__butuh"></i> ${t('radar.butuh', { karier: namaKarier })}</li>
+      <li><i class="legenda__zona"></i> ${t('radar.zona')}</li>
+      <li><i class="legenda__batas"></i> ${t('radar.batas')}</li>
       <li><i class="legenda__kurang"></i> ${t('radar.prioritas')}</li>
     </ul>
     <div class="radar__kanvas">
       <svg viewBox="0 0 ${W} ${H}" role="img"
-        aria-label="${t('radar.aria', { karier: namaKarier, daftar: data.filter(utama).map((d) => d.nama).join(', ') || t('radar.tidakAda') })}">
-        ${[50, 100].map((g) => html`<polygon points="${cincin(g)}" fill="none" stroke="var(--line)" stroke-width="${g === 100 ? 1.5 : 1}" />`)}
+        aria-label="${t('radar.aria', { daftar: data.filter(utama).map((d) => d.nama).join(', ') })}">
+        <path d="${jalurCincin(100)} ${jalurCincin(ambang.tinggi)}" fill="var(--sun)" fill-opacity="0.28" fill-rule="evenodd" />
+        <polygon points="${cincin(100)}" fill="none" stroke="var(--line)" stroke-width="1.5" />
+        <polygon points="${cincin(ambang.rendah)}" fill="none" stroke="var(--ink-2)" stroke-width="1.5" stroke-dasharray="5 5" />
         ${data.map((_, i) => {
           const [x, y] = titik(i, 100);
           return html`<line x1="${CX}" y1="${CY}" x2="${x}" y2="${y}" stroke="var(--line)" />`;
         })}
-        <polygon points="${poligon((d) => d.skor)}" fill="var(--aksen)" fill-opacity="0.16" stroke="var(--aksen)" stroke-width="2.5" stroke-linejoin="round" />
-        <polygon points="${poligon((d) => d.req)}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round" />
+        <polygon points="${teks(data.map((d, i) => titik(i, d.nilai)))}" fill="var(--aksen)" fill-opacity="0.16"
+          stroke="var(--aksen)" stroke-width="2.5" stroke-linejoin="round" />
         ${data.map((d, i) => {
           if (!utama(d)) return '';
-          const [x, y] = titik(i, d.req);
+          const [x, y] = titik(i, d.nilai);
           return html`<circle cx="${x}" cy="${y}" r="7" fill="var(--sun)" stroke="var(--ink)" stroke-width="2" />`;
         })}
         ${data.map((d, i) => {
@@ -75,7 +81,7 @@ export function gambarRadar(wadah, data, namaKarier, prioritas = []) {
         ${data.map((d, i) => {
           const [x, y] = titik(i, 68);
           return html`<circle cx="${x}" cy="${y}" r="36" fill="transparent" tabindex="0" data-sentuh="${i}"
-            aria-label="${d.nama}: ${status(d).toLowerCase()}" />`;
+            aria-label="${d.nama}: ${status(d)}" />`;
         })}
       </svg>
       <div class="tip" hidden></div>

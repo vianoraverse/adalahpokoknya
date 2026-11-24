@@ -22,13 +22,13 @@ function pengacak(seed) {
 const jawab = (acak, pusat) => Math.max(1, Math.min(5, Math.round(pusat + (acak() - 0.5) * 2.4)));
 
 /** Membuat jawaban semua butir aktif. Pertanyaan niat (Y) cenderung tinggi, soft skill bervariasi. */
-async function buatJawaban(db, acak, kekuatanPribadi) {
+async function buatJawaban(db, acak, kekuatanPribadi, pusatNiat = 3.8) {
   const { rows } = await db.query(
     `SELECT b.id, i.kode, i.variabel FROM butir b JOIN indikator i ON i.id = b.indikator_id WHERE b.aktif = TRUE`,
   );
   const hasil = {};
   for (const b of rows) {
-    const pusat = b.variabel === 'Y' ? 3.8 : (kekuatanPribadi[b.kode] ??= 2.4 + acak() * 2.2);
+    const pusat = b.variabel === 'Y' ? pusatNiat : (kekuatanPribadi[b.kode] ??= 2.4 + acak() * 2.2);
     hasil[b.id] = jawab(acak, pusat);
   }
   return hasil;
@@ -61,7 +61,8 @@ export async function isiDemo(db) {
   const demoId = await buatAkun(db, AKUN_DEMO.nama, AKUN_DEMO.email, AKUN_DEMO.password);
   const profilDemo = { 'problem-solving': 4.4, 'critical-thinking': 4.1, teamwork: 3.2, 'oral-communication': 2.6 };
   await simpanAsesmen(db, demoId, idKarier('it-pm'), await buatJawaban(db, acak, { ...profilDemo }), hariLalu(21));
-  await simpanAsesmen(db, demoId, idKarier('software-engineer'), await buatJawaban(db, acak, { ...profilDemo, teamwork: 3.8 }), hariLalu(2));
+  // Tes kedua: niat sudah mantap (kategori Sangat Cocok), soft skill masih campuran → aturan R2.
+  await simpanAsesmen(db, demoId, idKarier('software-engineer'), await buatJawaban(db, acak, { ...profilDemo, teamwork: 3.8 }, 4.7), hariLalu(2));
 
   // Mahasiswa contoh dengan pilihan karier yang beragam.
   for (let i = 1; i <= JUMLAH_CONTOH; i++) {
